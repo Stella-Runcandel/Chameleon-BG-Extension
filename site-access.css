@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+:root { color-scheme: dark; --bg:#090d16; --panel:#0f172a; --elev:#1e293b; --border:#334155; --text:#f8fafc; --muted:#cbd5e1; --subtle:#94a3b8; --blue:#0284c7; --red:#ef4444; }
+body { margin:0; min-height:100vh; background:radial-gradient(ellipse at top,#172541 0%,var(--bg) 60%); color:var(--text); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; }
+.access-shell { max-width:760px; margin:0 auto; padding:38px 22px 28px; }
+.access-brand { display:flex; align-items:center; gap:12px; margin-bottom:26px; }
+.access-brand h1 { margin:0; font-size:18px; }
+.access-brand p { margin:2px 0 0; color:var(--subtle); font-size:13px; }
+.brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; color:white; font-weight:800; letter-spacing:-1px; background:linear-gradient(135deg,#0284c7,#38bdf8); }
+.access-card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:28px; box-shadow:0 18px 55px rgba(0,0,0,.28); }
+.eyebrow { color:#7dd3fc; font-size:11px; font-weight:750; letter-spacing:.12em; margin:0 0 8px; }
+h2 { font-size:26px; line-height:1.2; margin:0 0 8px; letter-spacing:-.025em; }
+.origin-line { margin:0 0 22px; overflow-wrap:anywhere; color:#7dd3fc; }
+.warning-card { padding:16px; background:rgba(180,83,9,.12); border:1px solid rgba(245,158,11,.48); border-radius:10px; color:#fde68a; }
+.warning-card h3 { font-size:14px; margin:0 0 8px; }
+.warning-card p { margin:7px 0 0; color:#fef3c7; font-size:13px; }
+.ack-row { display:flex; align-items:flex-start; gap:10px; margin:20px 0 14px; color:var(--muted); font-size:13px; }
+.ack-row input { margin-top:4px; width:16px; height:16px; accent-color:#0284c7; }
+.status { min-height:24px; color:#7dd3fc; font-size:13px; }
+.status.error { color:#fca5a5; } .status.success { color:#86efac; }
+.actions { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+.btn { min-height:42px; border-radius:8px; padding:9px 16px; font:600 13px/1.25 inherit; cursor:pointer; border:1px solid var(--border); }
+.btn-primary { background:#0284c7; border-color:#38bdf8; color:white; }
+.btn-primary:hover:not(:disabled) { background:#0369a1; }
+.btn-secondary { background:var(--elev); color:var(--muted); }
+.btn[hidden] { display:none !important; }
+.btn:disabled { opacity:.48; cursor:not-allowed; }
+.btn-link { margin-top:14px; border:0; padding:8px 0; color:#7dd3fc; background:transparent; }
+.footnote { max-width:650px; margin:18px auto 0; color:var(--subtle); font-size:12px; }
+@media(max-width:560px) { .access-shell { padding:20px 12px; } .access-card { padding:19px; } h2 { font-size:22px; } .actions .btn { flex:1; } }

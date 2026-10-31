@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ChameleonBG v2.0.9 — Automated Integration &amp; Hardening Test Runner</title>
+  <link rel="stylesheet" href="../content.css" />
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f8fafc; color: #0f172a; }
+    #testFixtureRoot { display: grid; grid-template-columns: 240px 1fr; gap: 16px; margin-top: 16px; }
+    header, aside, main, article, section, footer { padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    .twin-box { width: 220px; height: 90px; border: 1px solid #94a3b8; padding: 10px; }
+  </style>
+</head>
+<body>
+  <header id="fixtureHeader" role="banner" style="width:960px;height:80px;">
+    <h1>Representative Test Website Header</h1>
+    <button id="unsuitableButton" type="button">Action Button</button>
+  </header>
+
+  <div id="testFixtureRoot">
+    <aside id="fixtureSidebar" role="complementary" class="sidebar" style="width:220px;height:420px;">
+      <h2>Left Navigation Sidebar</h2>
+      <p>Sidebar links and filters</p>
+    </aside>
+
+    <main id="fixtureMain" role="main" style="width:700px;min-height:480px;">
+      <article id="fixtureArticle" class="article-body" style="width:660px;height:220px;">
+        <h2>Featured Article Headline</h2>
+        <p>Foreground text that must stay 100% opaque even when the background layer opacity is reduced.</p>
+      </article>
+
+      <section id="hostileLabelSection" style="width:620px;height:110px;margin-top:12px;" aria-label="<img src=x onerror=&quot;window.__xssExecuted=true&quot;>">
+        <h2>&lt;script&gt;window.__xssExecuted=true&lt;/script&gt; &quot;&gt;&lt;svg onload=window.__xssExecuted=true&gt;</h2>
+      </section>
+
+      <table id="fixtureTable" style="width:600px;height:90px;margin-top:12px;">
+        <tbody>
+          <tr><td>Table Row Cell A</td><td>Table Row Cell B</td></tr>
+        </tbody>
+      </table>
+
+      <div id="fixtureCustomStyledBox" style="width:400px;height:100px;background-color:rgb(240, 249, 255);position:static;margin-top:12px;">
+        <h3>Custom Inline-Styled Component</h3>
+      </div>
+
+      <div id="fixtureImportantStyledBox" style="width:400px;height:90px;background-color:rgb(254, 242, 242) !important;margin-top:12px;">
+        <h3>Important Inline-Styled Component</h3>
+      </div>
+
+      <div id="ambiguousTwinsContainer" style="display:flex;gap:12px;margin-top:12px;">
+        <div class="twin-box"><span>Identical Card</span></div>
+        <div class="twin-box"><span>Identical Card</span></div>
+      </div>
+
+      <div id="spaMountSlot" style="margin-top:12px;"></div>
+
+      <iframe id="sameOriginFrame" srcdoc="<!DOCTYPE html><html><body style='margin:0;padding:12px;'><section id='innerFrameHero' style='width:340px;height:110px;border:1px solid #64748b;'><h2>Same-Origin Frame Hero</h2></section></body></html>" style="width:420px;height:160px;margin-top:12px;"></iframe>
+
+      <iframe id="crossOriginFrame" sandbox="" srcdoc="<p>Isolated sandboxed frame</p>" style="width:300px;height:100px;margin-top:12px;"></iframe>
+    </main>
+  </div>
+
+  <footer id="fixtureFooter" role="contentinfo" style="width:960px;height:70px;margin-top:16px;">
+    <p>Website Footer</p>
+  </footer>
+
+  <pre id="testOutputPre"></pre>
+
+  <script src="../storage-service.js"></script>
+  <script src="../selection-engine.js"></script>
+  <script src="../video-manager.js"></script>
+  <script src="../renderer-engine.js"></script>
+  <script src="acceptance_suite.js"></script>
+</body>
+</html>

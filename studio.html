@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChameleonBG — Visual Customization Studio</title>
+  <link rel="stylesheet" href="studio.css" />
+</head>
+<body>
+  <header class="studio-topbar">
+    <div class="topbar-left">
+      <div class="brand-mark">
+        <img src="icons/icon48.png" width="26" height="26" alt="" style="border-radius: 6px; object-fit: cover; flex-shrink: 0;" />
+        <div class="brand-text-col">
+          <h1 class="studio-title">ChameleonBG Studio</h1>
+          <div class="brand-meta-row">
+            <p class="target-site-meta" id="targetSiteSubtitle">Target website: https://example-site.local</p>
+            <select id="siteSwitcher" class="select-field site-switcher" aria-label="Switch the website being edited" title="Switch the website being edited" hidden></select>
+          </div>
+        </div>
+      </div>
+
+      <nav class="studio-nav" aria-label="Studio workspace views">
+        <button type="button" class="nav-tab active" data-view="editor" id="tabBtnEditor">Visual Editor</button>
+        <button type="button" class="nav-tab" data-view="library" id="tabBtnLibrary">Media Library</button>
+<button type="button" class="nav-tab" data-view="websites" id="tabBtnWebsites">Websites</button>
+        <button type="button" class="nav-tab" data-view="settings" id="tabBtnSettings">Settings &amp; Permissions</button>
+      </nav>
+    </div>
+
+    <div class="topbar-right">
+      <button type="button" class="btn btn-video-global-toggle" id="btnPauseBackgroundVideos" data-editor-only="true" aria-pressed="false" title="Pause all ChameleonBG background videos in open authorized tabs">Pause videos</button>
+      <label class="autosave-pill" data-editor-only="true" title="Automatically save changes to this website as you edit">
+        <input type="checkbox" id="chkStudioAutoSave" checked />
+        <span>Auto-save</span>
+      </label>
+      <div class="draft-indicator saved" id="draftStatusPill" data-editor-only="true" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="draftStatusLabel">Saved</span>
+      </div>
+      <div class="history-nav-group" data-editor-only="true" role="group" aria-label="Edit history navigation">
+        <button type="button" class="btn btn-history-arrow" id="btnStudioUndo" data-editor-only="true" disabled title="Step back 1 change (Ctrl+Z)">
+          ← Back
+        </button>
+        <button type="button" class="btn btn-history-arrow" id="btnStudioRedo" data-editor-only="true" disabled title="Step forward 1 change (Ctrl+Y)">
+          Forward →
+        </button>
+      </div>
+      <button type="button" class="btn" id="btnStudioDiscard" data-editor-only="true" disabled title="Discard unsaved preview changes and restore saved state">
+        Discard Edits
+      </button>
+      <button type="button" class="btn btn-primary" id="btnStudioSave" data-editor-only="true" disabled title="Save customizations for this website">
+        Save Changes
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Status / Error / Conflict Banner -->
+  <div id="globalAlertBanner" class="alert-banner" hidden role="alert">
+    <span id="globalAlertText"></span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button type="button" id="btnForceOverwriteConflict" class="btn btn-sm" hidden>Overwrite Remote</button>
+      <button type="button" id="btnReloadConflictState" class="btn btn-sm" hidden>Load Latest Saved</button>
+      <button type="button" id="btnDismissAlert" class="alert-close" aria-label="Dismiss alert">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: 3-PANEL VISUAL EDITOR -->
+  <main id="viewEditor" class="studio-workspace">
+    <!-- LEFT PANEL: PAGE AREAS -->
+    <aside class="panel panel-left" aria-labelledby="leftPanelHeading">
+      <div class="panel-header">
+        <h2 id="leftPanelHeading">Page Areas</h2>
+        <button type="button" class="btn btn-primary btn-sm" id="btnTriggerLivePicker" title="Switch to the target website tab and visually click any component">
+          Select on Live Website
+        </button>
+      </div>
+
+      <div class="panel-toolbar">
+        <input
+          type="search"
+          id="areaSearchInput"
+          class="input-field"
+          placeholder="Filter page areas..."
+          aria-label="Filter detected page areas"
+        />
+      </div>
+
+      <div id="pageAreasList" class="areas-list" role="listbox" aria-label="Detected website components"></div>
+
+      <div class="panel-footer" style="display:flex;flex-direction:column;gap:8px;">
+        <button type="button" class="btn btn-primary btn-block" id="btnSaveSiteAsTheme" title="Save this website's current background media, opacity, blur, and audio settings as a reusable theme you can apply to any website">
+          Save Current Setup as Theme
+        </button>
+        <button type="button" class="btn btn-danger-outline btn-block" id="btnResetEntireSite">
+          Reset All Website Customizations
+        </button>
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: STRUCTURED LAYOUT MAP -->
+    <section class="panel panel-center" aria-labelledby="centerPanelHeading">
+      <div class="center-map-section">
+        <div class="panel-header">
+          <div>
+            <h2 id="centerPanelHeading">Simplified Layout Representation</h2>
+            <p class="representation-note">
+              A structured map of detected page regions. Select an area or drop media onto it; nesting is inferred from available page structure.
+            </p>
+          </div>
+          <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the target webpage for newly loaded sections">
+            Rescan Page
+          </button>
+        </div>
+
+        <div id="mapStateNotice" class="map-state-notice" hidden></div>
+
+        <div class="layout-map-stage" id="layoutMapCanvas" role="tree" aria-label="Structured webpage component map"></div>
+
+        <div class="map-assignment-bar">
+          <div class="map-selection-summary">
+            <span class="map-selection-kicker">SELECTED AREA</span>
+            <strong id="mapSelectedAreaName">Entire Website</strong>
+            <span id="mapAssignedMediaSummary" class="map-assignment-meta">No background assigned</span>
+          </div>
+          <div class="map-assignment-actions">
+            <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose background</button>
+            <button type="button" class="btn" id="btnOpenFullMediaLibrary">Open Media Library</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- On-demand media picker: keeps the editor canvas focused until media is needed. -->
+    <dialog id="editorMediaPickerDialog" class="media-picker-dialog" aria-labelledby="editorMediaPickerHeading">
+      <div class="media-picker-shell">
+        <div class="media-picker-header">
+          <div>
+            <h2 id="editorMediaPickerHeading">Choose a background</h2>
+            <p class="secondary-sub">Select media for this page area. Imported files join the shared library; the assignment changes only when you click OK.</p>
+          </div>
+          <button type="button" class="btn btn-cancel-soft" id="btnCloseEditorMediaPicker" aria-label="Cancel background selection">Cancel</button>
+        </div>
+        <div class="media-picker-toolbar">
+          <input type="search" id="mediaSearchInput" class="input-field" placeholder="Search media…" aria-label="Search media library" />
+          <select id="mediaTypeFilter" class="select-field" aria-label="Filter by media type">
+            <option value="all">All Types</option>
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+            <option value="preset">Presets</option>
+          </select>
+          <select id="mediaSortSelect" class="select-field" aria-label="Sort media items">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="name">Name (A–Z)</option>
+            <option value="size-desc">Size (Largest)</option>
+            <option value="size-asc">Size (Smallest)</option>
+          </select>
+          <label class="btn btn-primary upload-btn-label">
+            Import media
+            <input type="file" id="studioFileInput" accept="image/webp,image/avif,image/png,image/jpeg,image/gif,image/svg+xml,video/webm,video/mp4,video/ogg" multiple hidden />
+          </label>
+        </div>
+        <div class="media-picker-summary"><span id="drawerStorageText" class="storage-pill">0 uploads · 0 built-in presets · 0 B stored</span></div>
+        <div id="conversionReportBar" class="conversion-bar" hidden></div>
+        <div id="studioMediaGrid" class="media-picker-grid" role="listbox" aria-multiselectable="true" aria-label="Available background media"></div>
+        <div class="media-picker-footer">
+          <div class="picker-selection-copy">
+            <strong id="pickerSelectionCount">0 selected</strong>
+            <span id="pickerSelectionHelp">Choose one background.</span>
+          </div>
+          <div class="picker-footer-actions">
+            <label class="picker-mode-control" for="pickerAssignmentMode">Assignment
+              <select id="pickerAssignmentMode" class="select-field">
+                <option value="single">Set one background</option>
+                <option value="playlist">Create/replace playlist</option>
+              </select>
+            </label>
+            <button type="button" class="btn btn-cancel-soft" id="btnCancelEditorMediaPicker">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnConfirmEditorMediaPicker" disabled>OK · Use selected</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- RIGHT PANEL: APPEARANCE & PLAYLIST INSPECTOR -->
+    <aside class="panel panel-right" aria-labelledby="rightPanelHeading">
+      <div class="panel-header">
+        <div>
+          <h2 id="rightPanelHeading">Appearance</h2>
+          <p class="selected-area-subtitle" id="inspectorAreaName">Entire Website</p>
+        </div>
+        <button type="button" class="btn btn-danger-outline btn-sm" id="btnResetSelectedArea" title="Remove customizations from this component and restore original page styles">
+          Reset Area
+        </button>
+      </div>
+
+      <div class="inspector-scroll">
+        <div class="suitability-box" id="inspectorSuitabilityBox">
+          <span class="suit-label" id="inspectorSuitabilityBadge">Mode A • Whole-Page Backdrop</span>
+          <p class="suit-desc" id="inspectorSuitabilityReason">Uses a viewport-sized layer behind the document body.</p>
+        </div>
+
+        <!-- Playlist & Rotation Section -->
+        <section class="inspector-group" aria-labelledby="playlistGroupHeading">
+          <div class="group-header">
+            <h3 id="playlistGroupHeading">Assigned Media &amp; Playlist</h3>
+            <span class="count-tag" id="playlistCountTag">0 items</span>
+          </div>
+          <div id="assignedPlaylistContainer" class="playlist-items"></div>
+
+          <div class="control-field">
+            <label for="selectRotationInterval" title="Choose how often multiple backgrounds rotate on this component">
+              Rotation Interval
+            </label>
+            <select id="selectRotationInterval" class="select-field">
+              <option value="0">Static (Do not rotate)</option>
+              <option value="15">Every 15 seconds</option>
+              <option value="60">Every 1 minute</option>
+              <option value="300">Every 5 minutes</option>
+              <option value="1800">Every 30 minutes</option>
+              <option value="-1">On page refresh</option>
+              <option value="custom">Custom duration…</option>
+            </select>
+          </div>
+
+          <div id="customRotationControls" class="custom-rotation-controls" hidden>
+            <span class="control-help">Custom interval (hours : minutes : seconds)</span>
+            <div class="hms-inputs">
+              <label>Hours <input type="number" id="rotationHours" min="0" max="999" step="1" value="0" inputmode="numeric" /></label>
+              <span aria-hidden="true">:</span>
+              <label>Minutes <input type="number" id="rotationMinutes" min="0" max="59" step="1" value="5" inputmode="numeric" /></label>
+              <span aria-hidden="true">:</span>
+              <label>Seconds <input type="number" id="rotationSeconds" min="0" max="59" step="1" value="0" inputmode="numeric" /></label>
+            </div>
+            <p class="video-audio-note">Set all fields to zero to disable timed rotation.</p>
+          </div>
+
+          <label class="checkbox-field">
+            <input type="checkbox" id="chkShufflePlaylist" />
+            <span>Shuffle playlist order</span>
+          </label>
+          <label class="checkbox-field" id="waitForVideoEndField">
+            <input type="checkbox" id="chkWaitForVideoEnd" />
+            <span>For videos, wait until the clip ends before switching</span>
+          </label>
+          <p class="video-audio-note" id="waitForVideoEndHelp">The interval is the minimum time before a switch. If a video is still playing when the interval expires, the next item waits until that clip ends.</p>
+        </section>
+
+        <!-- Playback and mute are controlled directly from each assigned video row in the map. -->
+        <section class="inspector-group video-playback-group" id="videoPlaybackGroup" aria-labelledby="videoPlaybackHeading" hidden>
+          <div class="group-header">
+            <h3 id="videoPlaybackHeading">Video Audio &amp; Loop Trim</h3>
+            <span class="count-tag">Video</span>
+          </div>
+          <div class="slider-field" title="Adjust the background video's volume">
+            <div class="slider-top">
+              <label for="sliderVideoVolume">Video Volume</label>
+              <span class="slider-val" id="valVideoVolume">35%</span>
+            </div>
+            <input type="range" id="sliderVideoVolume" min="0" max="100" value="35" />
+          </div>
+          <div class="video-trim-row" title="Trim dead or frozen trailing seconds so the video loops immediately at the cutoff point (0 = Auto-detect)">
+            <label for="inputVideoLoopStartSec">Loop Start (s)
+              <input type="number" id="inputVideoLoopStartSec" min="0" max="3600" step="0.1" value="0" inputmode="decimal" />
+            </label>
+            <label for="inputVideoLoopEndSec">Loop End Cutoff (s, 0 = Auto)
+              <input type="number" id="inputVideoLoopEndSec" min="0" max="3600" step="0.1" value="0" placeholder="Auto" inputmode="decimal" />
+            </label>
+          </div>
+          <p class="video-audio-note" id="videoLoopTrimHelp">Auto-detect cuts trailing audio overhangs and frozen end frames automatically. Set Loop End Cutoff (e.g. 12s) to force an exact loop point.</p>
+          <p class="video-audio-note" id="videoAudioHelp">Pause/Play and Mute/Unmute are available beside the active video in the layout map. Videos start muted. Sound preferences are per exact origin in this release; the browser may require an on-page click to allow sound.</p>
+        </section>
+
+        <!-- Primary Visual Controls -->
+        <section class="inspector-group" aria-labelledby="visualControlsHeading">
+          <h3 id="visualControlsHeading">Visual Adjustments</h3>
+
+          <div class="slider-field" title="Adjust background layer transparency without reducing foreground text opacity">
+            <div class="slider-top">
+              <label for="sliderOpacity">Background Opacity</label>
+              <span class="slider-val" id="valOpacity">85%</span>
+            </div>
+            <input type="range" id="sliderOpacity" min="5" max="100" value="85" />
+          </div>
+
+          <div class="slider-field" title="Adjust background image or video brightness">
+            <div class="slider-top">
+              <label for="sliderBrightness">Brightness</label>
+              <span class="slider-val" id="valBrightness">100%</span>
+            </div>
+            <input type="range" id="sliderBrightness" min="25" max="180" value="100" />
+          </div>
+
+          <div class="slider-field" title="Adjust visual contrast of the background layer">
+            <div class="slider-top">
+              <label for="sliderContrast">Contrast</label>
+              <span class="slider-val" id="valContrast">100%</span>
+            </div>
+            <input type="range" id="sliderContrast" min="25" max="180" value="100" />
+          </div>
+
+          <div class="slider-field" title="Adjust color saturation of the background media">
+            <div class="slider-top">
+              <label for="sliderSaturation">Saturation</label>
+              <span class="slider-val" id="valSaturation">100%</span>
+            </div>
+            <input type="range" id="sliderSaturation" min="0" max="200" value="100" />
+          </div>
+
+          <div class="slider-field" title="Apply Gaussian blur to soften busy background details">
+            <div class="slider-top">
+              <label for="sliderBlur">Gaussian Blur</label>
+              <span class="slider-val" id="valBlur">0 px</span>
+            </div>
+            <input type="range" id="sliderBlur" min="0" max="24" value="0" />
+          </div>
+
+          <div class="slider-field" title="Add a subtle dark or light tint overlay above the background to keep foreground text legible">
+            <div class="slider-top">
+              <label for="sliderDimmer">Readability Dimmer</label>
+              <span class="slider-val" id="valDimmer">20%</span>
+            </div>
+            <input type="range" id="sliderDimmer" min="0" max="85" value="20" />
+          </div>
+
+          <div class="slider-field" title="Apply frosted glass backdrop blur to inner website cards and containers so page text floats cleanly over the background">
+            <div class="slider-top">
+              <label for="sliderBackdropBlur">Frosted Glass Cards</label>
+              <span class="slider-val" id="valBackdropBlur">0 px</span>
+            </div>
+            <input type="range" id="sliderBackdropBlur" min="0" max="24" value="0" />
+          </div>
+
+          <div class="control-field">
+            <label for="selectTextContrastMode" title="Enhance foreground text legibility with a crisp contrast shadow when website text blends into busy backgrounds">
+              Smart Text Readability
+            </label>
+            <select id="selectTextContrastMode" class="select-field">
+              <option value="none">Default (Website original text)</option>
+              <option value="auto-shadow">Crisp Dark Halo (Best for light text)</option>
+              <option value="light-halo">Crisp Light Halo (Best for dark text)</option>
+              <option value="force-light">High-Contrast Light Text + Shadow</option>
+            </select>
+          </div>
+
+          <div class="control-field">
+            <span class="field-label">Fit Arrangement</span>
+            <div class="segmented-group" role="radiogroup" aria-label="Background fit mode">
+              <button type="button" class="seg-btn active" data-fit="cover">Cover</button>
+              <button type="button" class="seg-btn" data-fit="contain">Contain</button>
+              <button type="button" class="seg-btn" data-fit="repeat">Tile</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Expandable Advanced Options -->
+        <details class="advanced-details">
+          <summary>Advanced Rendering &amp; Site Matching Options</summary>
+          <div class="advanced-body">
+            <div class="control-field">
+              <label for="selectSiteMatchScope" title="Choose whether this customization applies only to this exact origin (protocol + host + port) or across the hostname">
+                Site Matching Scope
+              </label>
+              <select id="selectSiteMatchScope" class="select-field">
+                <option value="origin">Exact Origin (protocol + host + port)</option>
+                <option value="hostname">Entire Hostname (HTTP &amp; HTTPS, all ports)</option>
+                <option value="subdomain">Hostname &amp; Subdomains (*.domain)</option>
+              </select>
+            </div>
+
+            <div class="control-field">
+              <label for="inputTintColor">Dimmer Overlay Color</label>
+              <input type="color" id="inputTintColor" value="#0f172a" class="color-input" />
+            </div>
+
+            <div class="control-field">
+              <label for="selectRenderMode" title="Override how ChameleonBG attaches the background to this component">
+                Rendering Strategy
+              </label>
+              <select id="selectRenderMode" class="select-field">
+                <option value="">Automatic (Recommended)</option>
+                <option value="mode-b">Mode B — Independent Child Layer</option>
+                <option value="mode-c">Mode C — Controlled Inline Style Fallback</option>
+              </select>
+            </div>
+
+            <label class="checkbox-field" title="When customizing the Entire Website, gently make full-screen opaque root containers semi-transparent so the backdrop is visible">
+              <input type="checkbox" id="chkSoftenWrappers" checked />
+              <span>Soften opaque top-level page wrappers (Mode A)</span>
+            </label>
+          </div>
+        </details>
+      </div>
+    </aside>
+  </main>
+
+  <!-- VIEW 2: DEDICATED MEDIA LIBRARY MANAGEMENT -->
+  <section id="viewLibrary" class="secondary-view" hidden aria-labelledby="libraryViewHeading">
+    <div class="secondary-container">
+      <div class="secondary-header">
+        <div>
+          <h2 id="libraryViewHeading">Media Library</h2>
+          <p class="secondary-sub">
+            One local library shared by your enabled websites. Import once, then reuse a background anywhere.
+          </p>
+        </div>
+        <span class="storage-pill" id="libraryStorageText" role="status">0 items • 0 B</span>
+      </div>
+      <div class="library-toolbar" aria-label="Media library controls">
+        <input type="search" id="librarySearchInput" class="input-field" placeholder="Search your media…" aria-label="Search all saved media" />
+        <select id="libraryMediaTypeFilter" class="select-field" aria-label="Filter media type">
+          <option value="all">All media</option>
+          <option value="image">Images</option>
+          <option value="video">Videos</option>
+          <option value="preset">Presets</option>
+        </select>
+        <select id="libraryMediaSortSelect" class="select-field" aria-label="Sort media">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="name">Name (A–Z)</option>
+          <option value="size-desc">Largest first</option>
+          <option value="size-asc">Smallest first</option>
+        </select>
+        <label class="btn btn-primary upload-btn-label">
+          Import media
+          <input type="file" id="libraryFileInput" accept="image/webp,image/avif,image/png,image/jpeg,image/gif,image/svg+xml,video/webm,video/mp4,video/ogg" multiple hidden />
+        </label>
+      </div>
+      <p class="library-preferences-note">Import and WebP conversion preferences are managed in Settings &amp; Permissions → Media &amp; Storage.</p>
+      <div id="libraryFullGrid" class="library-full-grid" role="list" aria-label="All saved media"></div>
+    </div>
+  </section>
+
+  <!-- VIEW 2b: SAVED WEBSITES & DOMAIN THEMES -->
+  <section id="viewWebsites" class="secondary-view" hidden aria-labelledby="websitesViewHeading">
+    <div class="secondary-container">
+      <div class="secondary-header" style="margin-bottom: 16px;">
+        <div>
+          <h2 id="domainThemesHeading">Domain Themes</h2>
+          <p class="secondary-sub">Reusable styles and media assigned to base domains (e.g. youtube.com). Subdomains automatically inherit them without manual re-configuration.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnNewDomainTheme">+ New Domain Theme</button>
+      </div>
+      <p id="domainThemesEmptyNotice" class="library-preferences-note" hidden>No domain themes created yet. Create one to share presets across subdomains.</p>
+      <div id="domainThemesList" class="themes-grid" role="list" aria-label="Domain Themes" style="margin-bottom: 36px;"></div>
+
+      <div class="secondary-header" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 24px;">
+        <div>
+          <h2 id="websitesViewHeading">Websites</h2>
+          <p class="secondary-sub">Every website that has saved settings. Deleting a website removes only its saved areas and structure. Your media library is never touched.</p>
+        </div>
+        <span class="storage-pill" id="websitesCountText" role="status">0 websites</span>
+      </div>
+      <p id="websitesEmptyNotice" class="library-preferences-note" hidden>No websites have saved settings yet.</p>
+      <ul id="websitesList" class="websites-list" aria-label="Websites with saved settings"></ul>
+    </div>
+  </section>
+
+  <!-- VIEW 3: SETTINGS WITH STICKY CATEGORY NAVIGATION AND ONE SCROLLING CONTENT COLUMN -->
+  <section id="viewSettings" class="secondary-view settings-view" hidden aria-labelledby="settingsViewHeading">
+    <div class="secondary-container settings-container">
+      <div class="settings-page-heading">
+        <div>
+          <h2 id="settingsViewHeading">Settings &amp; Permissions</h2>
+          <p class="secondary-sub">Global defaults, performance guardrails, local media storage, site access and privacy controls.</p>
+        </div>
+        <span class="settings-local-badge"><span class="status-dot"></span> Stored locally</span>
+      </div>
+
+      <div class="settings-page-layout">
+        <nav class="settings-side-nav" aria-label="Settings categories">
+          <p class="settings-nav-caption">PREFERENCES</p>
+          <a href="#settings-general" class="settings-nav-link active" data-settings-target="settings-general" aria-current="location"><span class="settings-nav-icon">G</span><span>General</span></a>
+          <a href="#settings-performance" class="settings-nav-link" data-settings-target="settings-performance"><span class="settings-nav-icon">P</span><span>Performance</span></a>
+          <a href="#settings-media-storage" class="settings-nav-link" data-settings-target="settings-media-storage"><span class="settings-nav-icon">M</span><span>Media &amp; Storage</span></a>
+          <p class="settings-nav-caption settings-nav-caption-spaced">ACCESS &amp; DATA</p>
+          <a href="#settings-site-access" class="settings-nav-link" data-settings-target="settings-site-access"><span class="settings-nav-icon">S</span><span>Site Access</span></a>
+          <a href="#settings-privacy-data" class="settings-nav-link" data-settings-target="settings-privacy-data"><span class="settings-nav-icon">D</span><span>Privacy &amp; Data</span></a>
+        </nav>
+
+        <div class="settings-content-column" id="settingsContentColumn">
+          <section id="settings-general" class="settings-section" aria-labelledby="settingsGeneralHeading">
+            <div class="settings-section-heading">
+              <span class="settings-section-eyebrow">PREFERENCES</span>
+              <h3 id="settingsGeneralHeading">General</h3>
+              <p>Control whether ChameleonBG is active, without deleting saved backgrounds or site settings.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Global control</h4>
+              <label class="checkbox-field">
+                <input type="checkbox" id="setGlobalEnabled" checked />
+                <span>Allow ChameleonBG to run on sites I have enabled</span>
+              </label>
+              <p class="settings-note">Turn this off to pause ChameleonBG everywhere. Saved themes, site permissions, and media are preserved.</p>
+            </div>
+          </section>
+
+          <section id="settings-performance" class="settings-section" aria-labelledby="settingsPerformanceHeading">
+            <div class="settings-section-heading">
+              <span class="settings-section-eyebrow">EFFICIENCY</span>
+              <h3 id="settingsPerformanceHeading">Performance</h3>
+              <p>Set conservative defaults for background video playback and rendering work.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Video playback guardrails</h4>
+              <label class="checkbox-field">
+                <input type="checkbox" id="setEcoMode" checked />
+                <span>Pause and unload off-screen or background-tab video sources</span>
+              </label>
+              <div class="control-field settings-control-narrow">
+                <label for="setMaxVideos">Maximum simultaneously playing videos</label>
+                <select id="setMaxVideos" class="select-field">
+                  <option value="1">1 active video</option>
+                  <option value="2" selected>2 active videos (Default)</option>
+                  <option value="3">3 active videos</option>
+                  <option value="4">4 active videos</option>
+                </select>
+              </div>
+              <p class="settings-note">Paused videos may still retain some decoded frames or memory. These controls reduce unnecessary playback; they cannot guarantee zero CPU or GPU usage.</p>
+            </div>
+          </section>
+
+          <section id="settings-media-storage" class="settings-section" aria-labelledby="settingsMediaStorageHeading">
+            <div class="settings-section-heading">
+              <span class="settings-section-eyebrow">LIBRARY</span>
+              <h3 id="settingsMediaStorageHeading">Media &amp; Storage</h3>
+              <p>Configure local imports and optimization limits. Your media library remains shared between websites.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Media limits</h4>
+              <div class="control-field settings-control-narrow">
+                <label for="setMaxMediaSizeMB">Maximum single media file size</label>
+                <select id="setMaxMediaSizeMB" class="select-field">
+                  <option value="15">15 MB (Strict)</option>
+                  <option value="50" selected>50 MB (Default)</option>
+                  <option value="100">100 MB (Large Videos)</option>
+                  <option value="200">200 MB (Extended)</option>
+                </select>
+              </div>
+              <div class="control-field settings-control-narrow">
+                <label for="setMaxDimension">Maximum converted image dimension</label>
+                <select id="setMaxDimension" class="select-field">
+                  <option value="1920">1920 px (1080p)</option>
+                  <option value="2560" selected>2560 px (1440p Default)</option>
+                  <option value="3840">3840 px (4K)</option>
+                </select>
+              </div>
+              <div class="settings-subsection">
+                <h5>Image optimization</h5>
+                <label class="checkbox-field">
+                  <input type="checkbox" id="chkConvertToWebP" />
+                  <span>Convert eligible PNG/JPEG images to WebP on import</span>
+                </label>
+                <label class="checkbox-field">
+                  <input type="checkbox" id="chkPreserveOriginal" checked />
+                  <span>Keep original file alongside the converted version</span>
+                </label>
+              </div>
+              <p class="settings-note">Compressed file size is not the same as decoded RAM or GPU memory. Large files can still be expensive to render.</p>
+            </div>
+          </section>
+
+          <section id="settings-site-access" class="settings-section" aria-labelledby="settingsSiteAccessHeading">
+            <div class="settings-section-heading">
+              <span class="settings-section-eyebrow">PERMISSIONS</span>
+              <h3 id="settingsSiteAccessHeading">Site Access</h3>
+              <p>ChameleonBG should only run on websites you choose to enable.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Manage website access</h4>
+              <p class="settings-note">Visit a website and open the ChameleonBG toolbar popup to enable or pause that site, or revoke its browser permission. Revoking access preserves saved customizations; deleting those settings is a separate action.</p>
+              <p class="settings-note">Some websites may restrict visual-modification extensions. Review the site's applicable policies before enabling access. ChameleonBG cannot determine or guarantee whether a particular site's rules permit an extension.</p>
+              <div class="settings-inline-actions">
+                <button type="button" class="btn" id="btnOpenSiteAccessHelp">How site access works</button>
+              </div>
+              <p class="settings-note" id="siteAccessHelpText" hidden>Access has two separate parts: browser permission allows ChameleonBG to inspect or modify the site, while ChameleonBG's site toggle controls whether it applies saved customizations. Both must be enabled. A global pause disables behavior without deleting saved media or settings.</p>
+            </div>
+          </section>
+
+          <section id="settings-privacy-data" class="settings-section" aria-labelledby="settingsPrivacyDataHeading">
+            <div class="settings-section-heading">
+              <span class="settings-section-eyebrow">LOCAL DATA</span>
+              <h3 id="settingsPrivacyDataHeading">Privacy &amp; Data</h3>
+              <p>Understand where your customizations live and how to manage them.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Local-first storage</h4>
+              <ul class="permissions-list">
+                <li>Images and videos are stored in extension-owned IndexedDB. Site settings and component mappings are stored in extension storage.</li>
+                <li>Uploaded files are not sent to ChameleonBG servers by this extension.</li>
+                <li>Clearing a website's cookies or website storage should not clear the extension-owned media library.</li>
+                <li>Disabling ChameleonBG pauses customizations but preserves saved data. Browser-managed extension data is normally removed when the extension is uninstalled; exported backups stored elsewhere are not.</li>
+              </ul>
+              <div class="settings-storage-summary">
+                <div><span class="settings-metric-label">Saved media</span><strong id="settingsStorageCount">0 items</strong></div>
+                <div><span class="settings-metric-label">Storage used</span><strong id="settingsStorageBytes">0 B</strong></div>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 16px;">
+              <h4>Global Privacy, Terms of Use &amp; Liability Disclaimer</h4>
+              <p class="settings-note"><strong>Zero Data Collection &amp; Zero Telemetry (GDPR, CCPA/CPRA, APPI, PIPA, DPDP Act Compliant):</strong> ChameleonBG operates 100% locally within your browser. We do not collect, transmit, store, sell, or share any personal data, browsing history, website content, IP addresses, analytics, or uploaded media on any external server. ChameleonBG does not record streams or bypass DRM.</p>
+              <p class="settings-note"><strong>User Assumption of Risk &amp; Limitation of Liability:</strong> ChameleonBG is provided &ldquo;AS IS&rdquo; without warranty of any kind. By enabling ChameleonBG on a website, you assume full responsibility and risk for complying with that website&rsquo;s Terms of Service and for any local media files you import, and you agree that the developer(s) shall have zero liability for any claim, account action, or damages arising from your use of the extension.</p>
+            </div>
+
+            <div class="settings-card" style="margin-top: 16px;">
+              <h4>Backup &amp; Restore</h4>
+              <p class="settings-note">Export your ChameleonBG configuration and media to a local JSON file, or restore from a previous backup.</p>
+              <div class="settings-inline-actions" style="margin-top: 12px; gap: 10px; display: flex; flex-wrap: wrap;">
+                <button type="button" class="btn" id="btnExportSettingsOnly">Export Settings Only</button>
+                <button type="button" class="btn" id="btnExportFullBackup">Export Full Backup (with Media)</button>
+                <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+                  Import Backup…
+                  <input type="file" id="fileInputBackup" accept=".json,application/json" style="display: none;" />
+                </label>
+              </div>
+
+              <div id="importPreflightBox" class="settings-note" style="margin-top: 16px; padding: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px;" hidden>
+                <h5 style="margin: 0 0 8px 0; color: #38bdf8;">Backup Ready to Import</h5>
+                <p id="importPreflightSummary" style="margin: 0 0 10px 0;"></p>
+                <div style="margin-bottom: 12px; display: flex; gap: 16px;">
+                  <label class="radio-label">
+                    <input type="radio" name="importMode" value="merge" id="importModeMerge" checked />
+                    <span>Merge with existing settings</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="importMode" value="replace" id="importModeReplace" />
+                    <span>Replace existing settings</span>
+                  </label>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn btn-primary" id="btnConfirmImport">Confirm Import</button>
+                  <button type="button" class="btn" id="btnCancelImport">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card" style="margin-top: 16px; border-color: rgba(239, 68, 68, 0.3);">
+              <h4 style="color: #f87171;">Danger Zone</h4>
+              <p class="settings-note">Permanently delete all ChameleonBG website customizations, domain themes, and uploaded media files.</p>
+              <div class="settings-inline-actions" style="margin-top: 12px;">
+                <button type="button" class="btn" id="btnClearAllData" style="color: #f87171; border-color: rgba(239, 68, 68, 0.4);">Clear All ChameleonBG Data</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOMAIN THEME MODAL -->
+  <div id="themeModalOverlay" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="themeModalHeading">
+    <div class="modal-container theme-modal">
+      <div class="modal-header">
+        <h3 id="themeModalHeading">Create Domain Theme</h3>
+        <button type="button" class="btn-icon" id="btnCloseThemeModal" aria-label="Close theme modal">✕</button>
+      </div>
+      <form id="themeModalForm" class="modal-body">
+        <input type="hidden" id="themeInputId" />
+        <div class="form-group">
+          <label for="themeInputName">Theme Name</label>
+          <input type="text" id="themeInputName" class="input-text" placeholder="e.g. YouTube Dark Mode" required />
+        </div>
+        <div class="form-group">
+          <label for="themeInputDomain">Base / Registrable Domain</label>
+          <input type="text" id="themeInputDomain" class="input-text" placeholder="e.g. youtube.com" required />
+          <p class="form-help">Applies to all subdomains of this base domain (e.g. music.youtube.com, studio.youtube.com).</p>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="themeCheckAutoInherit" checked />
+            <span>Automatically apply to new subdomains of this domain</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="themeSliderOpacity">Default Opacity: <strong id="themeOpacityValue">85%</strong></label>
+            <input type="range" id="themeSliderOpacity" min="10" max="100" value="85" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="themeSliderBlur">Default Blur: <strong id="themeBlurValue">0px</strong></label>
+            <input type="range" id="themeSliderBlur" min="0" max="25" value="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="checkbox-label" style="margin-top: 24px;">
+              <input type="checkbox" id="themeCheckMuted" checked />
+              <span>Default videos to muted</span>
+            </label>
+          </div>
+          <div class="form-group flex-1">
+            <label for="themeSliderVolume">Default Volume: <strong id="themeVolumeValue">35%</strong></label>
+            <input type="range" id="themeSliderVolume" min="0" max="100" value="35" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btnCancelThemeModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveThemeModal">Save Theme</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="storage-service.js"></script>
+  <script src="video-manager.js"></script>
+  <script src="selection-engine.js"></script>
+  <script src="renderer-engine.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

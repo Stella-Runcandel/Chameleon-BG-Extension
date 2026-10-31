@@ -1,4 +1,4 @@
-MIT License
+MIT License & End-User Liability Disclaimer
 
 Copyright (c) 2026 Stella Runcandel
 
@@ -9,13 +9,31 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. USER ASSUMPTION OF RISK & RESPONSIBILITY:
+   ChameleonBG is a local-only client-side visual customization tool. It does not
+   bundle third-party copyrighted media, bypass digital rights management (DRM),
+   download or record web streams, or transmit data outside the user's browser.
+   By installing or enabling the Software on any website, the End-User expressly
+   acknowledges and agrees that:
+   (a) The End-User is solely responsible for selecting which websites to modify
+       and for complying with any applicable third-party website Terms of Service
+       or account policies;
+   (b) The End-User is solely responsible for ensuring they have the legal right
+       to view and use any local image, vector, or video files they import into
+       their browser; and
+   (c) The End-User assumes all risk and liability arising from their use of the
+       Software and agrees to hold the authors and contributors harmless from any
+       claim, account restriction, loss, or dispute arising out of the End-User's
+       local customization of any website or use of user-supplied media.
+
+3. DISCLAIMER OF WARRANTIES & LIMITATION OF LIABILITY:
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS, COPYRIGHT HOLDERS, OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES
+   OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.

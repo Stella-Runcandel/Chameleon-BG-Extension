@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "ChameleonBG — Custom Website Backgrounds",
+  "version": "2.3.0",
+  "description": "Firefox visual background studio with reliable audio playback, Domain Themes, safe data lifecycle, and streamlined site access.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "alarms"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ChameleonBG Studio",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": [
+      "storage-service.js",
+      "access-control.js",
+      "video-manager.js",
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "chameleonbg@local.experimental",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}

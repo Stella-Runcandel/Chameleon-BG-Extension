@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChameleonBG Extension E2E Fixture</title>
+  <style>
+    body { margin: 0; font: 16px/1.5 system-ui, sans-serif; }
+    header, main, article, aside, footer { padding: 1rem; margin: 1rem; border: 1px solid #cbd5e1; }
+    main { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+  </style>
+</head>
+<body>
+  <header id="smoke-header"><h1>Extension integration fixture</h1></header>
+  <main id="smoke-main">
+    <aside id="smoke-sidebar"><h2>Sidebar</h2><p>Frame and layout fixture.</p></aside>
+    <article id="smoke-article"><h2>Main article</h2><p>This page is used to verify the installed extension, storage transport and background renderer.</p></article>
+  </main>
+  <footer id="smoke-footer">Footer</footer>
+  <p id="legacySeedStatus" hidden>not-requested</p>
+  <script>
+    // Optional v1.x-origin migration fixture. The test runner visits this page once with
+    // ?seedLegacy=1, waits for this marker, then revisits it to validate the migration path.
+    if (new URLSearchParams(location.search).get("seedLegacy") === "1") {
+      (async () => {
+        const status = document.getElementById("legacySeedStatus");
+        try {
+          const request = indexedDB.open("ChameleonBG_MediaDB", 1);
+          request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("mediaBlobs")) {
+              db.createObjectStore("mediaBlobs", { keyPath: "id" });
+            }
+          };
+          const db = await new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+          const blob = new Blob(["legacy-migration-fixture-bytes"], { type: "image/png" });
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction("mediaBlobs", "readwrite");
+            tx.objectStore("mediaBlobs").put({
+              id: "legacy-e2e-media-v201",
+              name: "legacy-e2e-probe.png",
+              mimeType: "image/png",
+              mediaType: "image",
+              size: blob.size,
+              createdAt: Date.now(),
+              blob
+            });
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error || new Error("Legacy fixture transaction aborted"));
+          });
+          db.close();
+          status.textContent = "seeded";
+          status.dataset.status = "seeded";
+          status.hidden = false;
+        } catch (error) {
+          status.textContent = "error: " + String(error && error.message || error);
+          status.dataset.status = "error";
+          status.hidden = false;
+        }
+      })();
+    }
+  </script>
+</body>
+</html>

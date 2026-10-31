@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChameleonBG — Site Access</title>
+  <link rel="stylesheet" href="site-access.css" />
+</head>
+<body>
+  <main class="access-shell">
+    <header class="access-brand">
+      <img class="brand-mark" src="icons/icon48.png" width="36" height="36" alt="" style="border-radius: 8px; object-fit: cover;" />
+      <div><h1>ChameleonBG</h1><p>Website access setup</p></div>
+    </header>
+    <section class="access-card" aria-labelledby="accessTitle">
+      <p class="eyebrow">SITE PERMISSION</p>
+      <h2 id="accessTitle">Enable ChameleonBG on this website</h2>
+      <p class="origin-line" id="accessOrigin">Checking the selected website…</p>
+      <div class="warning-card">
+        <h3>Before you enable</h3>
+        <p>ChameleonBG adds custom image or video backgrounds by changing how a website is rendered in your browser.</p>
+        <p>Some websites may restrict browser extensions or visual modifications under their terms or account rules. Review the site's policies if unsure. ChameleonBG cannot guarantee that a website permits this or that your account will never be restricted.</p>
+      </div>
+      <label class="ack-row"><input id="chkPolicyAcknowledged" type="checkbox" /><span>I understand and want to request access for this site.</span></label>
+      <p id="accessStatus" class="status" role="status" aria-live="polite">Checking site and permission status…</p>
+      <div class="actions">
+        <button id="btnCancelAccess" class="btn btn-secondary" type="button">Keep disabled</button>
+        <button id="btnRequestAccess" class="btn btn-primary" type="button" disabled>Request browser access</button>
+        <button id="btnVerifyAccess" class="btn btn-secondary" type="button" hidden>Check permission status</button>
+      </div>
+      <button id="btnOpenEditor" class="btn btn-link" type="button" hidden>Open Visual Editor</button>
+    </section>
+    <p class="footnote">Access is requested only for this site's host. ChameleonBG saves media locally and does not upload your backgrounds to its servers. You can turn off this site or revoke access later.</p>
+  </main>
+  <script src="site-access.js"></script>
+</body>
+</html>

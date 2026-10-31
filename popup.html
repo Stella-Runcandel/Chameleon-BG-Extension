@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChameleonBG</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-icon" src="icons/icon48.png" width="24" height="24" alt="" style="border-radius: 5px; object-fit: cover;" />
+      <div class="brand-text">
+        <h1>ChameleonBG</h1>
+        <p id="siteHostLabel" class="site-host">Checking active tab...</p>
+      </div>
+    </div>
+    <label class="toggle-control" title="Enable or pause customizations on this website">
+      <input type="checkbox" id="siteEnableCheckbox" aria-label="Enable customizations on this website" />
+      <span class="toggle-track"></span>
+    </label>
+  </header>
+
+  <main class="popup-content">
+    <div id="unsupportedNotice" class="notice-banner" hidden>
+      <p id="unsupportedReasonText">This browser page cannot be modified due to browser security restrictions.</p>
+    </div>
+
+    <section id="siteConsentPanel" class="consent-panel" hidden aria-labelledby="siteConsentHeading">
+      <h2 id="siteConsentHeading">Before enabling on <span id="siteConsentHostname">this website</span></h2>
+      <p class="consent-question">Is it okay to use ChameleonBG to add custom image or video backgrounds on <strong id="siteConsentOrigin">this site</strong>?</p>
+      <p>Some websites may restrict browser extensions or visual modifications in their terms or account rules. Review the site's policies if unsure. ChameleonBG cannot guarantee that a website will allow this or that your account will never be restricted.</p>
+      <p class="consent-permission-note">Browser permission applies to this host across its ports; ChameleonBG still activates only for the exact saved origin.</p>
+      <div class="consent-actions">
+        <button id="btnKeepSiteDisabled" type="button" class="btn-secondary">Keep disabled</button>
+        <button id="btnConfirmSiteEnable" type="button" class="btn-primary">I understand — allow access</button>
+      </div>
+      <p id="siteConsentFeedback" class="consent-feedback" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <div id="siteAccessStateText" class="site-access-state" role="status" aria-live="polite">Checking site access…</div>
+
+    <div class="status-row">
+      <span class="status-label">Saved customizations</span>
+      <span id="customizationStatusText" class="status-value">None configured</span>
+    </div>
+
+    <div class="primary-actions">
+      <button id="btnOpenVisualEditor" type="button" class="btn-primary" disabled>
+        Open Visual Editor
+      </button>
+      <button id="btnSelectOnPage" type="button" class="btn-secondary" title="Point and click any section directly on the current webpage" disabled>
+        Select Area on Page
+      </button>
+    </div>
+
+    <section class="preview-section" aria-labelledby="savedPreviewHeading">
+      <div class="section-bar">
+        <h2 id="savedPreviewHeading">Saved Backgrounds</h2>
+        <button id="btnOpenMediaLibrary" type="button" class="link-btn">Media Library</button>
+      </div>
+      <div id="savedMediaStrip" class="media-strip" role="list"></div>
+    </section>
+  </main>
+
+  <footer class="popup-footer">
+    <div class="storage-summary" id="storageUsageText" title="Extension-owned IndexedDB media storage">
+      0 items • 0 B used
+    </div>
+    <div class="footer-links">
+      <button id="btnResetSite" type="button" class="footer-btn danger" hidden>Reset Site</button>
+      <button id="btnRevokeSiteAccess" type="button" class="footer-btn danger" hidden>Revoke access</button>
+      <button id="btnOpenWebsites" type="button" class="footer-btn">Websites</button>
+      <button id="btnOpenSettings" type="button" class="footer-btn">Settings</button>
+    </div>
+  </footer>
+
+  <script src="storage-service.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
