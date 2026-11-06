@@ -118,7 +118,7 @@
     function setFeedback(message, isError = false) {
       consentFeedback.textContent = message;
       consentFeedback.hidden = !message;
-      consentFeedback.style.color = isError ? "#fecaca" : "#bbf7d0";
+      consentFeedback.dataset.state = isError ? "error" : "success";
     }
 
     function renderAccessState() {
