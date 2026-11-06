@@ -53,6 +53,7 @@
   let detectedComponents = [];
   let frameNotices = [];
   let selectedCompId = "root_page";
+  let editorSideView = "areas";
   let mediaItems = [];
   let storageStats = { itemCount: 0, formattedTotal: "0 B" };
   let globalSettings = {
@@ -290,7 +291,8 @@
 
     if (!targetTabId) {
       detectedComponents = getDefaultSchematicComponents();
-      subtitle.textContent = `Target website: ${targetSiteKey} (Schematic Preview Mode)`;
+      subtitle.textContent = `${targetHostname} · Demo`;
+      subtitle.title = `Target website: ${targetSiteKey} (Schematic Preview Mode)`;
       mapNotice.hidden = true;
       return;
     }
@@ -302,7 +304,8 @@
 
     if (!cap.ok || !cap.supported) {
       detectedComponents = getDefaultSchematicComponents();
-      subtitle.textContent = `Unsupported page (${cap.url || "Protected tab"})`;
+      subtitle.textContent = "Unsupported page";
+      subtitle.title = cap.url || "Protected browser tab";
       mapNotice.textContent = cap.reason || "This browser page cannot be modified by extensions.";
       mapNotice.hidden = false;
       return;
@@ -310,7 +313,8 @@
 
     targetSiteKey = cap.siteKey || targetSiteKey;
     targetHostname = cap.hostname || targetHostname;
-    subtitle.textContent = `Target website: ${targetSiteKey}`;
+    subtitle.textContent = targetHostname;
+    subtitle.title = `Target website: ${targetSiteKey}`;
 
     const tabStatus = await sendTabMessage(targetTabId, {
       type: "CHAMELEON_GET_SITE_STATUS"
@@ -445,6 +449,7 @@
     const revision = ++framingPreviewRevision;
     const visual = document.getElementById("mediaFramingVisual");
     const notice = document.getElementById("mediaFramingNotice");
+    const chooseButton = document.getElementById("btnChoosePreviewBackground");
     const comp = detectedComponents.find((item) => item.id === selectedCompId) || detectedComponents[0];
     document.getElementById("mediaFramingAreaName").textContent = comp?.label || "Selected area";
     const ids = updatePreviewMediaChoices();
@@ -458,15 +463,18 @@
     if (!mediaId) {
       notice.textContent = "Choose a background for this area to see it here.";
       notice.hidden = false;
+      chooseButton.hidden = false;
       return;
     }
     notice.textContent = "Loading preview…";
     notice.hidden = false;
+    chooseButton.hidden = true;
     try {
       const record = await ChameleonStorageService.getMediaRecordWithBlob(mediaId);
       if (revision !== framingPreviewRevision || currentView !== "preview") return;
       if (!record || (record.mediaType !== "preset" && !record.blob)) {
         notice.textContent = "This background is missing from your library. Choose another item.";
+        chooseButton.hidden = false;
         return;
       }
       let media;
@@ -492,7 +500,10 @@
       setMediaFramingControlsEnabled(true);
       updateMediaFramingVisual();
     } catch (_) {
-      if (revision === framingPreviewRevision) notice.textContent = "Preview could not load. Choose another background or try again.";
+      if (revision === framingPreviewRevision) {
+        notice.textContent = "Preview could not load. Choose another background or try again.";
+        chooseButton.hidden = false;
+      }
     }
   }
 
@@ -950,7 +961,63 @@
     };
 
     treeRoot.appendChild(createNode(tree, 0));
-    stage.appendChild(treeRoot);
+
+    const outline = document.createElement("section");
+    outline.className = "map-schematic";
+    outline.setAttribute("aria-label", "Approximate page area outline");
+    const outlineHeading = document.createElement("div");
+    outlineHeading.className = "map-schematic-heading";
+    const outlineTitle = document.createElement("strong");
+    outlineTitle.textContent = "Page outline";
+    const outlineNote = document.createElement("span");
+    outlineNote.textContent = "Approximate page outline";
+    outlineHeading.append(outlineTitle, outlineNote);
+    const frame = document.createElement("div");
+    frame.className = "map-schematic-frame";
+    const wholePage = document.createElement("button");
+    wholePage.type = "button";
+    wholePage.className = `map-schematic-root${selectedCompId === "root_page" ? " selected" : ""}`;
+    wholePage.textContent = "Entire website";
+    wholePage.title = "Select the entire website";
+    wholePage.addEventListener("click", () => selectComponentArea("root_page"));
+    const rootArea = detectedComponents.find((comp) => comp.id === "root_page");
+    if (rootArea) bindDropZoneEvents(wholePage, rootArea);
+    frame.appendChild(wholePage);
+    const regions = detectedComponents
+      .filter((comp) => comp.id !== "root_page" && (comp.locator?.geometry || comp.rect))
+      .map((comp) => ({ comp, rect: getComponentMapRect(comp) }))
+      .filter(({ rect }) => [rect.x, rect.y, rect.w, rect.h].every(Number.isFinite) && rect.w > 0 && rect.h > 0)
+      .sort((a, b) => (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h));
+    const visibleRegions = regions.slice(0, 14);
+    const selectedRegion = regions.find(({ comp }) => comp.id === selectedCompId);
+    if (selectedRegion && !visibleRegions.includes(selectedRegion)) visibleRegions.push(selectedRegion);
+    for (const { comp, rect } of visibleRegions) {
+      const left = Math.max(0, Math.min(100, rect.x * 100));
+      const top = Math.max(0, Math.min(100, rect.y * 100));
+      const width = Math.min(100 - left, rect.w * 100);
+      const height = Math.min(100 - top, rect.h * 100);
+      if (width < 1 || height < 1) continue;
+      const region = document.createElement("button");
+      region.type = "button";
+      region.className = `map-schematic-region${comp.id === selectedCompId ? " selected" : ""}`;
+      region.style.left = `${left}%`;
+      region.style.top = `${top}%`;
+      region.style.width = `${width}%`;
+      region.style.height = `${height}%`;
+      region.textContent = width > 13 && height > 4 ? comp.label : "";
+      region.title = comp.label;
+      region.setAttribute("aria-label", `Select ${comp.label}`);
+      region.addEventListener("click", () => selectComponentArea(comp.id));
+      bindDropZoneEvents(region, comp);
+      frame.appendChild(region);
+    }
+    outline.append(outlineHeading, frame);
+    const hierarchy = document.createElement("details");
+    hierarchy.className = "map-hierarchy";
+    const hierarchyToggle = document.createElement("summary");
+    hierarchyToggle.textContent = "Browse page hierarchy";
+    hierarchy.append(hierarchyToggle, treeRoot);
+    stage.append(outline, hierarchy);
   }
 
   async function toggleComponentVideoAction(comp, action) {
@@ -1416,10 +1483,24 @@
 
   function selectComponentArea(compId) {
     selectedCompId = compId;
+    setEditorSidebarView("appearance");
     if (targetTabId) {
       sendTabMessage(targetTabId, { type: "CHAMELEON_HIGHLIGHT_COMPONENT", compId });
     }
     renderAllPanels();
+  }
+
+  function setEditorSidebarView(view, focus = false) {
+    editorSideView = view === "appearance" ? "appearance" : "areas";
+    const appearanceActive = editorSideView === "appearance";
+    document.getElementById("editorPanelAreas").hidden = appearanceActive;
+    document.getElementById("editorPanelAppearance").hidden = !appearanceActive;
+    for (const [id, active] of [["editorTabAreas", !appearanceActive], ["editorTabAppearance", appearanceActive]]) {
+      const tab = document.getElementById(id);
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (focus && active) tab.focus();
+    }
   }
 
   function assignMediaToComponentInStudio(comp, mediaId) {
@@ -1859,6 +1940,7 @@
     if (themesList && themesEmpty) {
       themesList.replaceChildren();
       themesEmpty.hidden = themes.length > 0;
+      document.getElementById("btnNewDomainTheme").hidden = themes.length === 0;
       for (const theme of themes) {
         themesList.appendChild(buildDomainThemeCard(theme));
       }
@@ -2129,6 +2211,10 @@
     li.className = "website-row";
     li.dataset.origin = site.origin;
 
+    const icon = document.createElement("span");
+    icon.className = "website-row-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = (site.hostname || "W").charAt(0).toUpperCase();
     const main = document.createElement("div");
     main.className = "website-row-main";
     const host = document.createElement("div");
@@ -2137,7 +2223,15 @@
     host.title = site.origin;
     const meta = document.createElement("div");
     meta.className = "website-row-meta";
-    meta.textContent = `${site.origin} • ${site.customizedCount} of ${site.componentCount} area${site.componentCount === 1 ? "" : "s"} with backgrounds • ${formatSiteUpdated(site.updatedAt)}`;
+    for (const value of [
+      site.origin,
+      `${site.customizedCount} of ${site.componentCount} area${site.componentCount === 1 ? "" : "s"} with backgrounds`,
+      formatSiteUpdated(site.updatedAt)
+    ]) {
+      const detail = document.createElement("span");
+      detail.textContent = value;
+      meta.appendChild(detail);
+    }
     main.append(host, meta);
 
     const badges = document.createElement("div");
@@ -2235,7 +2329,7 @@
     });
     actions.append(openBtn, deleteBtn);
 
-    li.append(main, badges, actions);
+    li.append(icon, main, badges, actions);
     return li;
   }
 
@@ -2386,7 +2480,7 @@
   async function startLivePickerFromStudio(options = {}) {
     const focusTarget = options.focusTarget !== false;
     const button = document.getElementById("btnTriggerLivePicker");
-    const originalLabel = button ? button.textContent : "Select on Live Website";
+    const originalLabel = button ? button.textContent : "Select on site";
     if (!targetTabId) {
       showAlert("No website tab is connected. Open ChameleonBG from the website's toolbar popup and launch the editor again.", true);
       return false;
@@ -2556,7 +2650,21 @@
   }
 
   function bindAllEvents() {
+    for (const [id, view] of [["editorTabAreas", "areas"], ["editorTabAppearance", "appearance"]]) {
+      const tab = document.getElementById(id);
+      tab?.addEventListener("click", () => setEditorSidebarView(view));
+      tab?.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        setEditorSidebarView(view === "areas" ? "appearance" : "areas", true);
+      });
+    }
+    setEditorSidebarView(editorSideView);
     document.getElementById("btnCloseMediaPreview")?.addEventListener("click", () => switchStudioView("editor"));
+    document.getElementById("btnChoosePreviewBackground")?.addEventListener("click", () => {
+      switchStudioView("editor");
+      openEditorMediaPicker();
+    });
     document.getElementById("btnRefreshPreviewSnapshot")?.addEventListener("click", capturePreviewSnapshot);
     document.getElementById("previewMediaSelect")?.addEventListener("change", (event) => {
       previewSelectedMediaId = event.target.value || null;
@@ -2587,7 +2695,13 @@
 
     setupSettingsNavigation();
     document.getElementById("btnOpenEditorMediaPicker")?.addEventListener("click", openEditorMediaPicker);
+    document.getElementById("btnOpenSelectedAreaPreview")?.addEventListener("click", () => switchStudioView("preview"));
     document.getElementById("btnOpenFullMediaLibrary")?.addEventListener("click", () => switchStudioView("library"));
+    document.getElementById("btnCreateThemeFromEmpty")?.addEventListener("click", () => openThemeModal());
+    document.getElementById("btnLearnSiteAccessFromEmpty")?.addEventListener("click", () => {
+      switchStudioView("settings");
+      document.querySelector('[data-settings-target="settings-site-access"]')?.click();
+    });
     document.getElementById("btnCloseEditorMediaPicker")?.addEventListener("click", closeEditorMediaPicker);
     document.getElementById("btnCancelEditorMediaPicker")?.addEventListener("click", closeEditorMediaPicker);
     document.getElementById("btnConfirmEditorMediaPicker")?.addEventListener("click", () => commitEditorMediaPickerSelection().catch((err) => showAlert(`Could not assign the selected media: ${err?.message || err}`, true)));

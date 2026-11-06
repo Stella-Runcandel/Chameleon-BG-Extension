@@ -66,14 +66,14 @@
     </div>
   </div>
 
-  <!-- VIEW 1: 3-PANEL VISUAL EDITOR -->
+  <!-- VIEW 1: VISUAL EDITOR -->
   <main id="viewEditor" class="studio-workspace">
     <!-- LEFT PANEL: PAGE AREAS -->
-    <aside class="panel panel-left" aria-labelledby="leftPanelHeading">
+    <aside class="panel panel-left" id="editorPanelAreas" role="tabpanel" aria-labelledby="editorTabAreas">
       <div class="panel-header">
         <h2 id="leftPanelHeading">Page Areas</h2>
         <button type="button" class="btn btn-primary btn-sm" id="btnTriggerLivePicker" title="Switch to the target website tab and visually click any component">
-          Select on Live Website
+          Select on site
         </button>
       </div>
 
@@ -91,10 +91,10 @@
 
       <div class="panel-footer" style="display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn btn-primary btn-block" id="btnSaveSiteAsTheme" title="Save this website's current background media, opacity, blur, and audio settings as a reusable theme you can apply to any website">
-          Save Current Setup as Theme
+          Save as theme
         </button>
-        <button type="button" class="btn btn-danger-outline btn-block" id="btnResetEntireSite">
-          Reset All Website Customizations
+        <button type="button" class="btn btn-danger-outline btn-block" id="btnResetEntireSite" title="Remove all customizations saved for this website">
+          Reset website
         </button>
       </div>
     </aside>
@@ -104,19 +104,19 @@
       <div class="center-map-section">
         <div class="panel-header">
           <div>
-            <h2 id="centerPanelHeading">Simplified Layout Representation</h2>
+            <h2 id="centerPanelHeading">Page structure</h2>
             <p class="representation-note">
-              A structured map of detected page regions. Select an area or drop media onto it; nesting is inferred from available page structure.
+              Select an area or drop media onto the page outline. Browse the hierarchy for precise areas.
             </p>
           </div>
           <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the target webpage for newly loaded sections">
-            Rescan Page
+            Rescan
           </button>
         </div>
 
         <div id="mapStateNotice" class="map-state-notice" hidden></div>
 
-        <div class="layout-map-stage" id="layoutMapCanvas" role="tree" aria-label="Structured webpage component map"></div>
+        <div class="layout-map-stage" id="layoutMapCanvas" role="group" aria-label="Structured webpage component map"></div>
 
         <div class="map-assignment-bar">
           <div class="map-selection-summary">
@@ -126,11 +126,17 @@
           </div>
           <div class="map-assignment-actions">
             <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose background</button>
+            <button type="button" class="btn" id="btnOpenSelectedAreaPreview">Preview result</button>
             <button type="button" class="btn" id="btnOpenFullMediaLibrary">Open Media Library</button>
           </div>
         </div>
       </div>
     </section>
+
+    <div class="editor-side-tabs" role="tablist" aria-label="Editor sidebar">
+      <button type="button" id="editorTabAreas" class="editor-side-tab" role="tab" aria-controls="editorPanelAreas" aria-selected="true">Page Areas</button>
+      <button type="button" id="editorTabAppearance" class="editor-side-tab" role="tab" aria-controls="editorPanelAppearance" aria-selected="false" tabindex="-1">Appearance</button>
+    </div>
 
     <!-- On-demand media picker: keeps the editor canvas focused until media is needed. -->
     <dialog id="editorMediaPickerDialog" class="media-picker-dialog" aria-labelledby="editorMediaPickerHeading">
@@ -185,7 +191,7 @@
     </dialog>
 
     <!-- RIGHT PANEL: APPEARANCE & PLAYLIST INSPECTOR -->
-    <aside class="panel panel-right" aria-labelledby="rightPanelHeading">
+    <aside class="panel panel-right" id="editorPanelAppearance" role="tabpanel" aria-labelledby="editorTabAppearance" hidden>
       <div class="panel-header">
         <div>
           <h2 id="rightPanelHeading">Appearance</h2>
@@ -416,21 +422,26 @@
         <button type="button" class="btn btn-primary" id="btnRefreshPreviewSnapshot">Refresh website snapshot</button>
       </div>
       <p class="preview-help" id="previewSnapshotStatus" role="status">The local website snapshot is a framing guide. Framing changes also update the real tab.</p>
-      <div class="media-framing-stage" id="mediaFramingStage" aria-label="Website snapshot and background framing preview">
-        <img id="previewSnapshotImage" class="preview-snapshot-image" alt="Captured website viewport" hidden />
-        <p id="mediaFramingNotice">Choose a background for this area to see it here.</p>
-        <div id="previewTargetRegion" class="preview-target-region">
-          <div id="mediaFramingVisual" class="media-framing-visual" hidden></div>
+      <div class="preview-workbench">
+        <div class="media-framing-stage" id="mediaFramingStage" aria-label="Website snapshot and background framing preview">
+          <img id="previewSnapshotImage" class="preview-snapshot-image" alt="Captured website viewport" hidden />
+          <p id="mediaFramingNotice">Choose a background for this area to see it here.</p>
+          <button type="button" class="btn btn-primary preview-empty-action" id="btnChoosePreviewBackground" hidden>Choose background</button>
+          <div id="previewTargetRegion" class="preview-target-region">
+            <div id="mediaFramingVisual" class="media-framing-visual" hidden></div>
+          </div>
         </div>
-      </div>
-      <div class="media-framing-controls">
-        <label for="sliderMediaZoom">Zoom <output id="valMediaZoom">100%</output></label>
-        <input type="range" id="sliderMediaZoom" min="100" max="300" value="100" />
-        <label for="sliderMediaPositionX">Horizontal position <output id="valMediaPositionX">50%</output></label>
-        <input type="range" id="sliderMediaPositionX" min="0" max="100" value="50" />
-        <label for="sliderMediaPositionY">Vertical position <output id="valMediaPositionY">50%</output></label>
-        <input type="range" id="sliderMediaPositionY" min="0" max="100" value="50" />
-        <p>Framing changes appear in the preview and save using your current Auto-save setting. Back and Forward in the editor can undo them.</p>
+        <div class="media-framing-controls">
+          <h3>Frame this background</h3>
+          <p class="preview-controls-intro">Adjust the selected area while watching the website context.</p>
+          <label for="sliderMediaZoom">Zoom <output id="valMediaZoom">100%</output></label>
+          <input type="range" id="sliderMediaZoom" min="100" max="300" value="100" />
+          <label for="sliderMediaPositionX">Horizontal position <output id="valMediaPositionX">50%</output></label>
+          <input type="range" id="sliderMediaPositionX" min="0" max="100" value="50" />
+          <label for="sliderMediaPositionY">Vertical position <output id="valMediaPositionY">50%</output></label>
+          <input type="range" id="sliderMediaPositionY" min="0" max="100" value="50" />
+          <p class="preview-save-note">Uses your current Auto-save setting. Back and Forward in the editor can undo framing.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -474,26 +485,44 @@
 
   <!-- VIEW 2b: SAVED WEBSITES & DOMAIN THEMES -->
   <section id="viewWebsites" class="secondary-view" hidden aria-labelledby="websitesViewHeading">
-    <div class="secondary-container">
-      <div class="secondary-header" style="margin-bottom: 16px;">
+    <div class="secondary-container websites-dashboard">
+      <div class="websites-column">
+      <div class="secondary-header">
         <div>
           <h2 id="domainThemesHeading">Domain Themes</h2>
-          <p class="secondary-sub">Reusable styles and media assigned to base domains (e.g. youtube.com). Subdomains automatically inherit them without manual re-configuration.</p>
+          <p class="secondary-sub">Reuse one background and style across a domain and its subdomains.</p>
         </div>
         <button type="button" class="btn btn-primary" id="btnNewDomainTheme">+ New Domain Theme</button>
       </div>
-      <p id="domainThemesEmptyNotice" class="library-preferences-note" hidden>No domain themes created yet. Create one to share presets across subdomains.</p>
-      <div id="domainThemesList" class="themes-grid" role="list" aria-label="Domain Themes" style="margin-bottom: 36px;"></div>
+      <div id="domainThemesEmptyNotice" class="theme-empty-state" hidden>
+        <span class="theme-empty-mark" aria-hidden="true">✦</span>
+        <div>
+          <h3>One look across a domain</h3>
+          <p>Create a theme to reuse your background and adjustments on related subdomains. Your existing website settings stay separate.</p>
+          <button type="button" class="btn theme-empty-action" id="btnCreateThemeFromEmpty">Create a theme</button>
+        </div>
+      </div>
+      <div id="domainThemesList" class="themes-grid" role="list" aria-label="Domain Themes"></div>
+      </div>
 
-      <div class="secondary-header" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 24px;">
+      <div class="websites-column">
+      <div class="secondary-header websites-section-header">
         <div>
           <h2 id="websitesViewHeading">Websites</h2>
-          <p class="secondary-sub">Every website that has saved settings. Deleting a website removes only its saved areas and structure. Your media library is never touched.</p>
+          <p class="secondary-sub">Manage saved website looks. Deleting one keeps your media library.</p>
         </div>
         <span class="storage-pill" id="websitesCountText" role="status">0 websites</span>
       </div>
-      <p id="websitesEmptyNotice" class="library-preferences-note" hidden>No websites have saved settings yet.</p>
+      <div id="websitesEmptyNotice" class="website-empty-state" hidden>
+        <span class="website-empty-mark" aria-hidden="true">◎</span>
+        <div>
+          <h3>Your websites will appear here</h3>
+          <p>Enable ChameleonBG on a website, then choose a background to save its setup.</p>
+          <button type="button" class="btn theme-empty-action" id="btnLearnSiteAccessFromEmpty">How site access works</button>
+        </div>
+      </div>
       <ul id="websitesList" class="websites-list" aria-label="Websites with saved settings"></ul>
+      </div>
     </div>
   </section>
 
@@ -524,7 +553,7 @@
             <div class="settings-section-heading">
               <span class="settings-section-eyebrow">PREFERENCES</span>
               <h3 id="settingsGeneralHeading">General</h3>
-              <p>Control whether ChameleonBG is active, without deleting saved backgrounds or site settings.</p>
+              <p>Pause ChameleonBG without removing saved setups.</p>
             </div>
             <div class="settings-card">
               <h4>Global control</h4>
@@ -532,7 +561,7 @@
                 <input type="checkbox" id="setGlobalEnabled" checked />
                 <span>Allow ChameleonBG to run on sites I have enabled</span>
               </label>
-              <p class="settings-note">Turn this off to pause ChameleonBG everywhere. Saved themes, site permissions, and media are preserved.</p>
+              <p class="settings-note">Turning this off keeps themes, permissions, and media saved.</p>
             </div>
           </section>
 
@@ -540,7 +569,7 @@
             <div class="settings-section-heading">
               <span class="settings-section-eyebrow">EFFICIENCY</span>
               <h3 id="settingsPerformanceHeading">Performance</h3>
-              <p>Set conservative defaults for background video playback and rendering work.</p>
+              <p>Set limits for background video playback.</p>
             </div>
             <div class="settings-card">
               <h4>Video playback guardrails</h4>
@@ -557,7 +586,7 @@
                   <option value="4">4 active videos</option>
                 </select>
               </div>
-              <p class="settings-note">Paused videos may still retain some decoded frames or memory. These controls reduce unnecessary playback; they cannot guarantee zero CPU or GPU usage.</p>
+              <p class="settings-note">Paused videos may still use memory. These limits reduce playback work.</p>
             </div>
           </section>
 
@@ -565,7 +594,7 @@
             <div class="settings-section-heading">
               <span class="settings-section-eyebrow">LIBRARY</span>
               <h3 id="settingsMediaStorageHeading">Media &amp; Storage</h3>
-              <p>Configure local imports and optimization limits. Your media library remains shared between websites.</p>
+              <p>Choose local import limits and image optimization.</p>
             </div>
             <div class="settings-card">
               <h4>Media limits</h4>
@@ -597,7 +626,7 @@
                   <span>Keep original file alongside the converted version</span>
                 </label>
               </div>
-              <p class="settings-note">Compressed file size is not the same as decoded RAM or GPU memory. Large files can still be expensive to render.</p>
+              <p class="settings-note">Large files can use substantial memory even after compression.</p>
             </div>
           </section>
 
@@ -609,9 +638,9 @@
             </div>
             <div class="settings-card">
               <h4>Manage website access</h4>
-              <p class="settings-note">Visit a website and open the ChameleonBG toolbar popup to enable or pause that site, or revoke its browser permission. Revoking access preserves saved customizations; deleting those settings is a separate action.</p>
+              <p class="settings-note">Use the toolbar on a website to enable, pause, or revoke access. Revoking access keeps its saved setup.</p>
               <div id="settingsSiteAccessSummary" class="settings-site-summary" role="status">Loading saved website access…</div>
-              <p class="settings-note">Some websites may restrict visual-modification extensions. Review the site's applicable policies before enabling access. ChameleonBG cannot determine or guarantee whether a particular site's rules permit an extension.</p>
+              <p class="settings-note">Check each site's rules before enabling access; ChameleonBG cannot verify whether extensions are permitted there.</p>
               <div class="settings-inline-actions">
                 <button type="button" class="btn" id="btnOpenSiteAccessHelp">How site access works</button>
               </div>
@@ -631,7 +660,7 @@
                 <li>Images and videos are stored in extension-owned IndexedDB. Site settings and component mappings are stored in extension storage.</li>
                 <li>Uploaded files are not sent to ChameleonBG servers by this extension.</li>
                 <li>Clearing a website's cookies or website storage should not clear the extension-owned media library.</li>
-                <li>Disabling ChameleonBG pauses customizations but preserves saved data. Browser-managed extension data is normally removed when the extension is uninstalled; exported backups stored elsewhere are not.</li>
+                <li>Disabling ChameleonBG preserves saved data. Uninstalling normally removes browser-managed extension data, but exported backups remain where you saved them.</li>
               </ul>
               <div class="settings-storage-summary">
                 <div><span class="settings-metric-label">Saved media</span><strong id="settingsStorageCount">0 items</strong></div>
@@ -639,14 +668,14 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top: 16px;">
-              <h4>What site access means</h4>
+            <details class="settings-card settings-disclosure">
+              <summary>What site access means</summary>
               <p class="settings-note">ChameleonBG stores imported media and customizations in extension-owned browser storage. It does not upload them to a ChameleonBG server or use analytics in this build.</p>
               <p class="settings-note">On a site you enable, the extension can inspect page areas and display only the media assigned to that site's saved configuration. The site may observe visual changes to its page. ChameleonBG does not access or change protected video streams.</p>
               <p class="settings-note">Review each site's rules before enabling access. Exported backups are files you control and may contain your imported media.</p>
-            </div>
+            </details>
 
-            <div class="settings-card" style="margin-top: 16px;">
+            <div class="settings-card">
               <h4>Backup &amp; Restore</h4>
               <p class="settings-note">Export your ChameleonBG configuration and media to a local JSON file, or restore from a previous backup.</p>
               <div class="settings-inline-actions" style="margin-top: 12px; gap: 10px; display: flex; flex-wrap: wrap;">
@@ -678,7 +707,7 @@
               </div>
             </div>
 
-            <div class="settings-card" style="margin-top: 16px; border-color: rgba(239, 68, 68, 0.3);">
+            <div class="settings-card" style="border-color: rgba(239, 68, 68, 0.3);">
               <h4 style="color: #f87171;">Danger Zone</h4>
               <p class="settings-note">Permanently delete all ChameleonBG website customizations, domain themes, and uploaded media files.</p>
               <div class="settings-inline-actions" style="margin-top: 12px;">

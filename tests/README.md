@@ -31,7 +31,7 @@ The runner executes Tier 1 first. It explicitly reports browser tiers as **BLOCK
 2. Confirm the toolbar popup opens without a background-script error.
 3. Grant access to a test origin using the site-specific consent flow.
 4. Open the Studio, switch between Visual Editor, Media Library and Settings, and confirm only one view appears at a time.
-5. Click **Select on Live Website**. Confirm the live-page HUD appears before hovering, select a suitable component, confirm it, and verify the Studio returns with that component selected.
+5. Click **Select on site**. Confirm the live-page HUD appears before hovering, select a suitable component, confirm it, and verify the Studio returns with that component selected.
 6. Verify cancellation with Escape and verify that unsuitable targets provide guidance.
 7. Revoke site permission and verify the agent is deactivated without deleting saved media or settings.
 8. Test file picker and desktop file-manager drag-and-drop.
