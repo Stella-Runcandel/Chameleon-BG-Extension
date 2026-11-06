@@ -2257,6 +2257,12 @@ input[type="range"], input[type="checkbox"] { accent-color: #b890f3; }
 [data-studio-theme="light"] .btn-danger-outline { background: #fff1f3; border-color: #cc8495; color: #a73a54; }
 [data-studio-theme="light"] .btn-danger-outline:hover:not(:disabled) { background: #fbe0e6; border-color: #b75a70; color: #8b2940; }
 [data-studio-theme="light"] input[type="range"], [data-studio-theme="light"] input[type="checkbox"] { accent-color: #7650b6; }
+
+/* Reset actions stay visible as destructive controls in both Studio modes. */
+.btn.btn-danger-outline { background: #b83250; border-color: #e96983; color: #fff; font-weight: 650; }
+.btn.btn-danger-outline:hover:not(:disabled) { background: #d44362; border-color: #ff91a5; color: #fff; }
+[data-studio-theme="light"] .btn.btn-danger-outline { background: #b82e4e; border-color: #a42644; color: #fff; }
+[data-studio-theme="light"] .btn.btn-danger-outline:hover:not(:disabled) { background: #98223f; border-color: #851c37; color: #fff; }
 @media (max-width: 680px) {
   .settings-page-layout { grid-template-columns: minmax(0, 1fr); }
   .settings-side-nav { position: relative; top: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
