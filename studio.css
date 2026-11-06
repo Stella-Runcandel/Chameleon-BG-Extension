@@ -1389,8 +1389,22 @@ input[type="range"] {
 .settings-inline-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
+}
+
+.settings-inline-actions .support-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  text-decoration: none;
+}
+
+.settings-inline-actions .support-link:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
 }
 
 #siteAccessHelpText {
