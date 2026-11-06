@@ -678,7 +678,7 @@ async function runUnitTests() {
       set(items, callback) { Object.assign(store, JSON.parse(JSON.stringify(items))); if (callback) callback(); return Promise.resolve(); },
       remove(keys, callback) { for (const key of (Array.isArray(keys) ? keys : [keys])) delete store[key]; if (callback) callback(); return Promise.resolve(); }
     };
-    const calls = { created: [], updated: [], runtimeMessages: [], tabMessages: [] };
+    const calls = { created: [], updated: [], runtimeMessages: [], tabMessages: [], menus: [] };
     let onMessageListener = null;
     const mockChrome = {
       runtime: {
@@ -693,6 +693,10 @@ async function runUnitTests() {
         onAdded: event("permission-added"), onRemoved: event("permission-removed"),
         getAll(callback) { const out = { origins: [] }; if (callback) callback(out); return Promise.resolve(out); },
         contains(_details, callback) { const v = options.permissionGranted === true; if (callback) callback(v); return Promise.resolve(v); }
+      },
+      contextMenus: {
+        create(info, callback) { calls.menus.push(info); if (callback) callback(); },
+        onClicked: event("menu-clicked")
       },
       alarms: { create(_n, _i, cb) { if (cb) cb(); return Promise.resolve(); }, onAlarm: event("alarm") },
       tabs: {
@@ -760,6 +764,31 @@ async function runUnitTests() {
     await pickerReuse.dispatch({ type: "CHAMELEON_OPEN_FULL_STUDIO", tabId: "", siteKey: "https://example.com", section: "websites", startPicker: true }, pickerReuse.popupSender);
     assert(!pickerReuse.calls.updated.some((u) => u.active === true), "Picker reuse must not activate the Studio tab");
     return "Verified Studio reuse, background creation for the picker, and no forced focus change";
+  });
+
+  await test("U39", "Page context menu launches the existing picker only after exact-site access", async () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.json"), "utf8"));
+    assert(manifest.permissions.includes("contextMenus"), "The menu uses the declared browser permission");
+    const tab = { id: 7, url: "https://example.com/watch", title: "Example" };
+    const enabled = makeBackgroundHarness({
+      "siteAccess::https%3A%2F%2Fexample.com": {
+        origin: "https://example.com", enabled: true, consentVersion: 1,
+        consentAcceptedAt: 5, hostPermissionGrantedAt: 5,
+        permissionPattern: "https://example.com/*"
+      }
+    }, [tab], { permissionGranted: true });
+    enabled.listeners["installed::0"]();
+    assert(enabled.calls.menus.some((m) => m.id === "chameleon-select-area" && m.contexts.includes("video")), "Install adds the menu on page and video contexts");
+    await enabled.listeners["menu-clicked::0"]({ menuItemId: "chameleon-select-area" }, tab);
+    assert(enabled.calls.created.length === 1 && enabled.calls.created[0].active === false && /studio\.html.*startPicker=1/.test(enabled.calls.created[0].url), "Authorized click starts the normal background Studio picker");
+
+    const disabled = makeBackgroundHarness({}, [tab]);
+    await disabled.listeners["menu-clicked::0"]({ menuItemId: "chameleon-select-area" }, tab);
+    assert(disabled.calls.created.length === 1 && /site-access\.html.*startPicker=1/.test(disabled.calls.created[0].url), "Unapproved site opens the consent flow, not the picker");
+    assert(!disabled.calls.created.some((t) => /studio\.html/.test(t.url)), "No unauthorized editor launch");
+    await disabled.listeners["menu-clicked::0"]({ menuItemId: "other-extension-item" }, tab);
+    assert(disabled.calls.created.length === 1, "Other menu items are ignored");
+    return "Verified menu registration, authorized picker launch, consent fallback, and unrelated-item isolation";
   });
 
   await test("U17", "permissions.onAdded completes a fresh pending enable intent once and ignores expired ones", async () => {

@@ -5,6 +5,7 @@
   const params = new URLSearchParams(location.search);
   const tabId = Number(params.get("tabId"));
   const requestedSiteKey = params.get("siteKey") || "";
+  const startPickerAfterAccess = params.get("startPicker") === "1";
   const originEl = document.getElementById("accessOrigin");
   const statusEl = document.getElementById("accessStatus");
   const ackEl = document.getElementById("chkPolicyAcknowledged");
@@ -12,6 +13,7 @@
   const verifyBtn = document.getElementById("btnVerifyAccess");
   const cancelBtn = document.getElementById("btnCancelAccess");
   const openEditorBtn = document.getElementById("btnOpenEditor");
+  if (startPickerAfterAccess) openEditorBtn.textContent = "Select area on page";
 
   // Prefer Firefox's Promise-native browser.* APIs. Keep the chrome.* callback path
   // for Chromium builds and older compatibility implementations.
@@ -390,7 +392,8 @@
         type: "CHAMELEON_OPEN_FULL_STUDIO",
         tabId,
         siteKey: requestedSiteKey,
-        section: "editor"
+        section: "editor",
+        startPicker: startPickerAfterAccess
       });
       window.close();
     } catch (error) {

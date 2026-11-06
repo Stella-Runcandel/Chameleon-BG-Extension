@@ -41,6 +41,7 @@ const SITE_CONSENT_VERSION = ChameleonAccessControl.SITE_CONSENT_VERSION;
 const SITE_ACCESS_KEY_PREFIX = ChameleonAccessControl.SITE_ACCESS_KEY_PREFIX;
 const SITE_CONFIG_KEY_PREFIX = "siteCfg::";
 const INJECTED_FILES = ["storage-service.js", "video-manager.js", "selection-engine.js", "renderer-engine.js", "content.js"];
+const SELECT_AREA_MENU_ID = "chameleon-select-area";
 const inFlightInjections = new Map();
 const PENDING_ENABLE_KEY_PREFIX = "pendingEnable::";
 const PENDING_ENABLE_TTL_MS = 2 * 60 * 1000;
@@ -478,6 +479,40 @@ async function openOrFocusStudio({ tabId, siteKey, section, startPicker }) {
   return { studioTabId: created.id, reused: false };
 }
 
+function registerSelectAreaContextMenu() {
+  if (!chrome.contextMenus?.create) return;
+  chrome.contextMenus.create({
+    id: SELECT_AREA_MENU_ID,
+    title: "Select area with ChameleonBG",
+    contexts: ["page", "frame", "link", "image", "video", "audio", "selection", "editable"],
+    documentUrlPatterns: ["http://*/*", "https://*/*"]
+  }, () => {
+    if (chrome.runtime.lastError) console.warn("[ChameleonBG] Could not add the Select area menu:", chrome.runtime.lastError.message);
+  });
+}
+
+async function selectAreaFromContextMenu(info, tab) {
+  if (info?.menuItemId !== SELECT_AREA_MENU_ID || !Number.isInteger(tab?.id)) return;
+  const targetTab = await chrome.tabs.get(tab.id).catch(() => null);
+  const pageUrl = parseSupportedPageUrl(targetTab?.url);
+  if (!pageUrl) return;
+  const siteKey = ChameleonStorageService.deriveSiteIdentity(pageUrl.href).originKey;
+  try {
+    const state = await getSiteRuntimeState(pageUrl.href);
+    if (state.allowed) {
+      await openOrFocusStudio({ tabId: tab.id, siteKey, section: "editor", startPicker: true });
+      return;
+    }
+  } catch (error) {
+    console.warn("[ChameleonBG] Could not check site access for the Select area menu:", error);
+  }
+  const accessUrl = new URL(chrome.runtime.getURL("site-access.html"));
+  accessUrl.searchParams.set("tabId", String(tab.id));
+  accessUrl.searchParams.set("siteKey", siteKey);
+  accessUrl.searchParams.set("startPicker", "1");
+  await chrome.tabs.create({ url: accessUrl.href, active: true });
+}
+
 async function deactivateTabRuntime(tabId, message = {}) {
   if (!Number.isInteger(tabId)) return;
   try {
@@ -625,10 +660,17 @@ function ensureStartupMigration() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  registerSelectAreaContextMenu();
   ensureStartupMigration()
     .then(() => deactivateLegacyProfilesWithoutConsent())
     .finally(() => restoreAuthorizedOpenTabs());
 });
+
+if (chrome.contextMenus?.onClicked) {
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    return selectAreaFromContextMenu(info, tab).catch((error) => console.warn("[ChameleonBG] Select area menu failed:", error));
+  });
+}
 
 // No static <all_urls> content script is registered. Scripts are injected only after
 // the user grants optional host access, accepts the site warning, and enables that exact origin.
