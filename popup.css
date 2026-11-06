@@ -1,14 +1,14 @@
 :root {
-  --bg-surface: #0f172a;
-  --bg-elevated: #1e293b;
-  --bg-muted: #131c31;
-  --border-subtle: #334155;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --accent-primary: #0284c7;
-  --accent-hover: #0369a1;
-  --accent-focus: #38bdf8;
+  --bg-surface: #1c2530;
+  --bg-elevated: #2a3543;
+  --bg-muted: #232e3b;
+  --border-subtle: #435263;
+  --text-primary: #f2f6fa;
+  --text-secondary: #d2dce5;
+  --text-muted: #a8b9c8;
+  --accent-primary: #237d55;
+  --accent-hover: #1c6a49;
+  --accent-focus: #c4a5ff;
   --danger-text: #fca5a5;
 }
 
@@ -120,7 +120,7 @@ input:focus-visible {
   padding: 9px 12px;
   background: var(--accent-primary);
   color: #ffffff;
-  border: 1px solid var(--accent-focus);
+  border: 1px solid #66bd8e;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -149,7 +149,7 @@ input:focus-visible {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #334155;
+  background: #394a5b;
   color: var(--text-primary);
 }
 
@@ -274,7 +274,7 @@ input:focus-visible {
 .toggle-track {
   position: absolute;
   inset: 0;
-  background-color: #334155;
+  background-color: #465668;
   border-radius: 18px;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -306,7 +306,7 @@ input:focus-visible {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: #172033;
+  background: #26303a;
   border: 1px solid #a16207;
   border-radius: 8px;
   color: var(--text-secondary);
