@@ -483,7 +483,7 @@ function registerSelectAreaContextMenu() {
   if (!chrome.contextMenus?.create) return;
   chrome.contextMenus.create({
     id: SELECT_AREA_MENU_ID,
-    title: "Select area with ChameleonBG",
+    title: "Choose area",
     contexts: ["page", "frame", "link", "image", "video", "audio", "selection", "editable"],
     documentUrlPatterns: ["http://*/*", "https://*/*"]
   }, () => {
