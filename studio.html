@@ -30,6 +30,7 @@
     </div>
 
     <div class="topbar-right">
+      <button type="button" class="btn" id="btnHeaderSupport" aria-label="Support ChameleonBG" title="Support ChameleonBG" hidden>☕</button>
       <button type="button" class="btn studio-theme-toggle" id="btnStudioThemeToggle" aria-label="Switch to light mode" aria-pressed="false" title="Switch Studio color mode">☀ <span>Light</span></button>
       <button type="button" class="btn btn-video-global-toggle" id="btnPauseBackgroundVideos" data-editor-only="true" aria-pressed="false" title="Pause all ChameleonBG background videos in open authorized tabs">Pause videos</button>
       <label class="autosave-pill" data-editor-only="true" title="Automatically save changes to this website as you edit">
@@ -574,7 +575,7 @@
               </div>
               <p class="settings-note">Applies to the Studio only. Website backgrounds and saved setups stay as they are.</p>
             </div>
-            <div class="settings-card">
+            <div class="settings-card" id="settingsSupportCard">
               <h4>Support ChameleonBG</h4>
               <p class="settings-note">If you'd like to support development, choose a platform.</p>
               <div class="settings-inline-actions">

@@ -1938,6 +1938,8 @@
     const websitesView = document.getElementById("viewWebsites");
     if (websitesView) websitesView.hidden = currentView !== "websites";
     document.getElementById("viewSettings").hidden = currentView !== "settings";
+    const supportShortcut = document.getElementById("btnHeaderSupport");
+    if (supportShortcut) supportShortcut.hidden = currentView === "editor";
     // Draft actions only belong to the editor. Keeping them visible on Settings or
     // Media Library made those screens look like a continuation of the editor.
     document.querySelectorAll("[data-editor-only=\"true\"]").forEach((el) => {
@@ -2742,6 +2744,10 @@
   function bindAllEvents() {
     applyStudioTheme(studioThemeMode);
     document.getElementById("btnStudioThemeToggle")?.addEventListener("click", () => applyStudioTheme(studioThemeMode === "dark" ? "light" : "dark"));
+    document.getElementById("btnHeaderSupport")?.addEventListener("click", () => {
+      switchStudioView("settings");
+      requestAnimationFrame(() => document.getElementById("settingsSupportCard")?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    });
     document.getElementById("setStudioThemeMode")?.addEventListener("change", (event) => applyStudioTheme(event.target.value));
     for (const [id, view] of [["editorTabAreas", "areas"], ["editorTabAppearance", "appearance"]]) {
       const tab = document.getElementById(id);
