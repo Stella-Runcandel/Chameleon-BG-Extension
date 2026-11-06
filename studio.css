@@ -2319,11 +2319,11 @@ input[type="range"], input[type="checkbox"] { accent-color: #a77de9; }
 [data-studio-theme="light"] .map-node-video-status.paused-globally { color: #7044aa; }
 [data-studio-theme="light"] .media-framing-stage { background-image: linear-gradient(90deg, rgba(91, 113, 128, .06) 1px, transparent 1px), linear-gradient(rgba(91, 113, 128, .06) 1px, transparent 1px); }
 
-/* Match the quiet Delete controls without changing reset behavior. */
-.btn.btn-danger-outline { background: #2b3948; border-color: #53677b; color: var(--text-primary); font-weight: 500; }
-.btn.btn-danger-outline:hover:not(:disabled) { background: #3a4a5c; border-color: #9e81d5; color: var(--text-primary); }
-[data-studio-theme="light"] .btn.btn-danger-outline { background: #edf1f4; border-color: #c7d2dc; color: #263845; }
-[data-studio-theme="light"] .btn.btn-danger-outline:hover:not(:disabled) { background: #dfe7ec; border-color: #a5b5c3; color: #263845; }
+/* Reset actions use the Danger Zone's red text and outline. */
+.btn.btn-danger-outline { background: #2b3948; border-color: rgba(239, 68, 68, .4); color: #f87171; font-weight: 500; }
+.btn.btn-danger-outline:hover:not(:disabled) { background: #3a4a5c; border-color: #e57385; color: #ff9ba4; }
+[data-studio-theme="light"] .btn.btn-danger-outline { background: #edf1f4; border-color: #d9828e; color: #b3263d; }
+[data-studio-theme="light"] .btn.btn-danger-outline:hover:not(:disabled) { background: #fbe8ec; border-color: #bf586b; color: #912036; }
 
 /* Selected video and Settings controls use the same iris accent in both modes. */
 .btn-map-video-action[aria-pressed="true"] { background: #46365f; border-color: #a98ad9; color: #f2e9ff; }
