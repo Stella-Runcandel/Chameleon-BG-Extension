@@ -2398,6 +2398,29 @@
     };
   }
 
+  function getPreviewMediaIds(component = {}) {
+    const playlist = Array.isArray(component.playlist) ? component.playlist : [];
+    const ids = playlist.length > 0 ? playlist : [component.activeMediaId];
+    return [...new Set(ids.filter((id) => typeof id === "string" && id.length > 0))];
+  }
+
+  function projectPreviewRect(rect, viewportWidth, viewportHeight) {
+    if (!rect || !Number.isFinite(viewportWidth) || !Number.isFinite(viewportHeight) ||
+        viewportWidth <= 0 || viewportHeight <= 0) return null;
+    const left = Math.max(0, Math.min(viewportWidth, Number(rect.left)));
+    const top = Math.max(0, Math.min(viewportHeight, Number(rect.top)));
+    const right = Math.max(0, Math.min(viewportWidth, Number(rect.left) + Number(rect.width)));
+    const bottom = Math.max(0, Math.min(viewportHeight, Number(rect.top) + Number(rect.height)));
+    if (![left, top, right, bottom].every(Number.isFinite) || right <= left || bottom <= top) return null;
+    const percent = (value, extent) => Math.round(value / extent * 1000) / 10;
+    return {
+      x: percent(left, viewportWidth),
+      y: percent(top, viewportHeight),
+      width: percent(right - left, viewportWidth),
+      height: percent(bottom - top, viewportHeight)
+    };
+  }
+
   const StorageService = {
     EXT_DB_NAME,
     MEDIA_STORE,
@@ -2442,6 +2465,8 @@
     findThemeForTarget,
     resolveEffectiveConfig,
     normalizeMediaFraming,
+    getPreviewMediaIds,
+    projectPreviewRect,
     getMediaUsageReferences,
     pruneDeletedMediaReferences,
     isSafeHttpOrFileSiteKey,

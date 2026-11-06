@@ -664,6 +664,39 @@
     }, 1100);
   }
 
+  function getPreviewBounds(compId) {
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    if (compId === "root_page") {
+      return { viewport, rect: { left: 0, top: 0, width: viewport.width, height: viewport.height } };
+    }
+    const config = getActiveWorkingSiteConfig();
+    const savedLocator = config.components?.[compId]?.locator;
+    let locator = savedLocator;
+    let element = locator
+      ? ChameleonSelectionEngine.resolveComponentLocator(locator, document, window).element
+      : null;
+    if (!element) {
+      const found = ChameleonSelectionEngine.discoverPageComponents(document, window, config.components)
+        .components.find((item) => item.id === compId);
+      element = found?.element || null;
+      locator = found?.locator || locator;
+    }
+    if (!element) return { viewport, rect: null };
+    const box = element.getBoundingClientRect();
+    let left = box.left;
+    let top = box.top;
+    if (locator?.context?.frameSelector) {
+      try {
+        const frame = document.querySelector(locator.context.frameSelector);
+        if (!frame) return { viewport, rect: null };
+        const frameBox = frame.getBoundingClientRect();
+        left += frameBox.left;
+        top += frameBox.top;
+      } catch (_) { return { viewport, rect: null }; }
+    }
+    return { viewport, rect: { left, top, width: box.width, height: box.height } };
+  }
+
   // =========================================================================
   // 4. SAFE IN-PAGE STUDIO DOCK (ZERO innerHTML USAGE)
   // =========================================================================
@@ -1249,6 +1282,12 @@
           frameNotices: discovery.frameNotices,
           diagnostics
         };
+      }
+
+      case "CHAMELEON_GET_PREVIEW_BOUNDS": {
+        const compId = typeof message.compId === "string" ? message.compId : "";
+        if (!compId || compId.length > 300) return { viewport: null, rect: null };
+        return getPreviewBounds(compId);
       }
 
       case "CHAMELEON_HIGHLIGHT_COMPONENT": {

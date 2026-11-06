@@ -79,6 +79,10 @@
   let settingsSectionObserver = null;
   let framingPreviewUrl = null;
   let framingPreviewRevision = 0;
+  let previewSelectedMediaId = null;
+  let previewRotationTimer = null;
+  let previewCaptureRevision = 0;
+  let studioReady = false;
 
   function releaseFramingPreviewUrl() {
     if (framingPreviewUrl) URL.revokeObjectURL(framingPreviewUrl);
@@ -269,6 +273,8 @@
     await syncWithTargetTab();
     syncSettingsControls();
     renderAllPanels();
+    studioReady = true;
+    if (currentView === "preview") capturePreviewSnapshot();
     if (startPickerOnLaunch) {
       // Let the initial view render before switching to the target tab for selection.
       window.setTimeout(() => {
@@ -355,7 +361,7 @@
     renderCenterLayoutMap();
     renderRightInspectorPanel();
     renderMediaLibraryGrids();
-    if (document.getElementById("mediaFramingDialog")?.open) renderMediaFramingPreview();
+    if (currentView === "preview") renderMediaFramingPreview();
   }
 
   function updateMediaFramingVisual() {
@@ -380,19 +386,75 @@
     }
   }
 
+  function stopPreviewRotation() {
+    if (previewRotationTimer) clearTimeout(previewRotationTimer);
+    previewRotationTimer = null;
+  }
+
+  function clearPreviewSnapshot() {
+    ++previewCaptureRevision;
+    const image = document.getElementById("previewSnapshotImage");
+    image.removeAttribute("src");
+    image.hidden = true;
+    const stage = document.getElementById("mediaFramingStage");
+    stage.style.aspectRatio = "";
+    const region = document.getElementById("previewTargetRegion");
+    for (const side of ["left", "top", "width", "height"]) region.style[side] = "";
+    region.hidden = false;
+    document.getElementById("previewSnapshotStatus").textContent = "The local website snapshot is a framing guide. Framing changes also update the real tab.";
+  }
+
+  function updatePreviewMediaChoices() {
+    const cfg = workingSiteConfig.components?.[selectedCompId] || {};
+    const ids = ChameleonStorageService.getPreviewMediaIds(cfg);
+    const select = document.getElementById("previewMediaSelect");
+    if (!ids.includes(previewSelectedMediaId)) previewSelectedMediaId = ids[0] || null;
+    select.replaceChildren();
+    if (!ids.length) {
+      const option = document.createElement("option");
+      option.textContent = "No background assigned";
+      option.value = "";
+      select.appendChild(option);
+    } else {
+      for (const id of ids) {
+        const option = document.createElement("option");
+        const meta = allMediaItems.find((item) => item.id === id);
+        option.value = id;
+        option.textContent = meta?.name || id;
+        select.appendChild(option);
+      }
+    }
+    select.value = previewSelectedMediaId || "";
+    select.disabled = ids.length < 2;
+    document.getElementById("previewModeSelect").disabled = ids.length < 2;
+    return ids;
+  }
+
+  function schedulePreviewRotation(ids) {
+    stopPreviewRotation();
+    if (currentView !== "preview" || ids.length < 2 || document.getElementById("previewModeSelect").value !== "playlist") return;
+    const cfg = workingSiteConfig.components?.[selectedCompId] || {};
+    const seconds = Math.max(3, Math.min(3600, Number(cfg.rotationIntervalSec) || 15));
+    previewRotationTimer = setTimeout(() => {
+      previewSelectedMediaId = ids[(ids.indexOf(previewSelectedMediaId) + 1) % ids.length];
+      renderMediaFramingPreview();
+    }, seconds * 1000);
+  }
+
   async function renderMediaFramingPreview() {
     const revision = ++framingPreviewRevision;
     const visual = document.getElementById("mediaFramingVisual");
     const notice = document.getElementById("mediaFramingNotice");
     const comp = detectedComponents.find((item) => item.id === selectedCompId) || detectedComponents[0];
     document.getElementById("mediaFramingAreaName").textContent = comp?.label || "Selected area";
+    const ids = updatePreviewMediaChoices();
+    schedulePreviewRotation(ids);
     visual.replaceChildren();
     visual.hidden = true;
     setMediaFramingControlsEnabled(false);
     releaseFramingPreviewUrl();
     updateMediaFramingVisual();
-    const cfg = workingSiteConfig.components?.[selectedCompId];
-    const mediaId = cfg?.activeMediaId || cfg?.playlist?.[0];
+    const mediaId = previewSelectedMediaId;
     if (!mediaId) {
       notice.textContent = "Choose a background for this area to see it here.";
       notice.hidden = false;
@@ -402,7 +464,7 @@
     notice.hidden = false;
     try {
       const record = await ChameleonStorageService.getMediaRecordWithBlob(mediaId);
-      if (revision !== framingPreviewRevision || !document.getElementById("mediaFramingDialog").open) return;
+      if (revision !== framingPreviewRevision || currentView !== "preview") return;
       if (!record || (record.mediaType !== "preset" && !record.blob)) {
         notice.textContent = "This background is missing from your library. Choose another item.";
         return;
@@ -431,6 +493,82 @@
       updateMediaFramingVisual();
     } catch (_) {
       if (revision === framingPreviewRevision) notice.textContent = "Preview could not load. Choose another background or try again.";
+    }
+  }
+
+  function callTabApi(method, ...args) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.tabs[method](...args, (value) => {
+          const error = chrome.runtime.lastError;
+          if (error) reject(new Error(error.message));
+          else resolve(value);
+        });
+      } catch (error) { reject(error); }
+    });
+  }
+
+  async function capturePreviewSnapshot() {
+    const revision = ++previewCaptureRevision;
+    const status = document.getElementById("previewSnapshotStatus");
+    if (!targetTabId || !chrome.tabs?.captureVisibleTab) {
+      status.textContent = "Website capture is unavailable. You can still preview and frame the assigned background.";
+      return;
+    }
+    status.textContent = "Capturing the selected website…";
+    let originalTabId = null;
+    let windowId = null;
+    try {
+      const tab = await callTabApi("get", targetTabId);
+      if (!tab || !/^https?:\/\//i.test(tab.url || "") || normalizeOrigin(tab.url) !== normalizeOrigin(targetSiteKey)) {
+        throw new Error("The website tab changed. Return to the editor and select the site again.");
+      }
+      windowId = tab.windowId;
+      const bounds = await sendTabMessage(targetTabId, { type: "CHAMELEON_GET_PREVIEW_BOUNDS", compId: selectedCompId });
+      if (!bounds.ok || !bounds.viewport) throw new Error("The selected website is not ready for preview.");
+      const active = await callTabApi("query", { active: true, windowId });
+      originalTabId = active?.[0]?.id ?? null;
+      if (originalTabId !== targetTabId) await callTabApi("update", targetTabId, { active: true });
+      const check = await callTabApi("query", { active: true, windowId });
+      if (check?.[0]?.id !== targetTabId) throw new Error("Could not activate the selected website tab.");
+      const dataUrl = await callTabApi("captureVisibleTab", windowId, { format: "jpeg", quality: 80 });
+      const capturedTab = await callTabApi("query", { active: true, windowId });
+      const capturedTarget = capturedTab?.[0]?.id === targetTabId ? await callTabApi("get", targetTabId) : null;
+      if (!capturedTarget || normalizeOrigin(capturedTarget.url || "") !== normalizeOrigin(targetSiteKey)) {
+        throw new Error("The active tab changed during capture. Try refreshing again.");
+      }
+      if (revision !== previewCaptureRevision || currentView !== "preview") return;
+      if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) throw new Error("The website image was unavailable.");
+      const image = document.getElementById("previewSnapshotImage");
+      image.src = dataUrl;
+      image.hidden = false;
+      const width = Number(bounds.viewport.width);
+      const height = Number(bounds.viewport.height);
+      document.getElementById("mediaFramingStage").style.aspectRatio = `${width} / ${height}`;
+      const region = document.getElementById("previewTargetRegion");
+      const rect = ChameleonStorageService.projectPreviewRect(bounds.rect, width, height);
+      if (rect) {
+        region.style.left = `${rect.x}%`;
+        region.style.top = `${rect.y}%`;
+        region.style.width = `${rect.width}%`;
+        region.style.height = `${rect.height}%`;
+        region.hidden = false;
+        status.textContent = "Website snapshot refreshed. This is a framing guide; refresh after the page moves. Changes also update the real tab.";
+      } else {
+        region.hidden = true;
+        status.textContent = "The selected area is outside the visible page. Scroll it into view and refresh the snapshot.";
+      }
+    } catch (error) {
+      if (revision === previewCaptureRevision && currentView === "preview") {
+        status.textContent = `Website capture unavailable: ${error?.message || error}. Background framing remains available.`;
+      }
+    } finally {
+      if (originalTabId != null && originalTabId !== targetTabId && windowId != null) {
+        try {
+          const active = await callTabApi("query", { active: true, windowId });
+          if (active?.[0]?.id === targetTabId) await callTabApi("update", originalTabId, { active: true });
+        } catch (_) {}
+      }
     }
   }
 
@@ -1606,9 +1744,16 @@
   }
 
   function switchStudioView(viewName) {
-    const supportedViews = new Set(["editor", "library", "websites", "settings"]);
+    const supportedViews = new Set(["editor", "preview", "library", "websites", "settings"]);
     const nextView = supportedViews.has(viewName) ? viewName : "editor";
     const previousView = currentView;
+    if (previousView === "preview" && nextView !== "preview") {
+      stopPreviewRotation();
+      ++framingPreviewRevision;
+      releaseFramingPreviewUrl();
+      document.getElementById("mediaFramingVisual").replaceChildren();
+      clearPreviewSnapshot();
+    }
     currentView = nextView;
     if (currentView === "settings" && previousView !== "settings") {
       const settingsView = document.getElementById("viewSettings");
@@ -1621,6 +1766,7 @@
       btn.setAttribute("aria-pressed", String(active));
     });
     document.getElementById("viewEditor").hidden = currentView !== "editor";
+    document.getElementById("viewPreview").hidden = currentView !== "preview";
     document.getElementById("viewLibrary").hidden = currentView !== "library";
     const websitesView = document.getElementById("viewWebsites");
     if (websitesView) websitesView.hidden = currentView !== "websites";
@@ -1632,6 +1778,8 @@
     });
     document.title = currentView === "library"
       ? "ChameleonBG — Media Library"
+      : currentView === "preview"
+        ? "ChameleonBG — Preview"
       : currentView === "websites"
         ? "ChameleonBG — Websites"
         : currentView === "settings"
@@ -1641,6 +1789,10 @@
     if (currentView === "settings") renderSettingsSiteAccessSummary();
     if (currentView === "websites" && previousView !== "websites") {
       renderWebsitesView().catch((err) => showAlert(`Could not load websites: ${err?.message || err}`, true));
+    }
+    if (currentView === "preview" && previousView !== "preview" && studioReady) {
+      renderMediaFramingPreview();
+      capturePreviewSnapshot();
     }
   }
 
@@ -2144,6 +2296,13 @@
     const changingSite = nextKey !== normalizeOrigin(targetSiteKey) || (Number.isInteger(tabId) && tabId !== targetTabId);
     if (changingSite && !(await confirmLeaveCurrentSite())) return false;
     if (changingSite) {
+      if (currentView === "preview") {
+        stopPreviewRotation();
+        ++framingPreviewRevision;
+        releaseFramingPreviewUrl();
+        clearPreviewSnapshot();
+        previewSelectedMediaId = null;
+      }
       targetTabId = Number.isInteger(tabId) ? tabId : targetTabId;
       targetSiteKey = nextKey;
       targetHostname = ChameleonStorageService.deriveSiteIdentity(targetSiteKey).hostname;
@@ -2174,6 +2333,7 @@
     }
     switchStudioView(view || "editor");
     renderAllPanels();
+    if (changingSite && currentView === "preview") capturePreviewSnapshot();
     refreshSiteSwitcher().catch(() => {});
     if (startPicker) {
       // The Studio is usually in the background here; keep the website in front.
@@ -2396,17 +2556,13 @@
   }
 
   function bindAllEvents() {
-    const framingDialog = document.getElementById("mediaFramingDialog");
-    document.getElementById("btnOpenMediaPreview")?.addEventListener("click", () => {
-      framingDialog.showModal();
+    document.getElementById("btnCloseMediaPreview")?.addEventListener("click", () => switchStudioView("editor"));
+    document.getElementById("btnRefreshPreviewSnapshot")?.addEventListener("click", capturePreviewSnapshot);
+    document.getElementById("previewMediaSelect")?.addEventListener("change", (event) => {
+      previewSelectedMediaId = event.target.value || null;
       renderMediaFramingPreview();
     });
-    document.getElementById("btnCloseMediaPreview")?.addEventListener("click", () => framingDialog.close());
-    framingDialog?.addEventListener("close", () => {
-      ++framingPreviewRevision;
-      releaseFramingPreviewUrl();
-      document.getElementById("mediaFramingVisual").replaceChildren();
-    });
+    document.getElementById("previewModeSelect")?.addEventListener("change", renderMediaFramingPreview);
     for (const [id, property] of [["sliderMediaZoom", "mediaZoom"], ["sliderMediaPositionX", "mediaPositionX"], ["sliderMediaPositionY", "mediaPositionY"]]) {
       const slider = document.getElementById(id);
       slider.addEventListener("pointerdown", () => pushUndoState());

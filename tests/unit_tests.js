@@ -1448,6 +1448,29 @@ async function runUnitTests() {
     assert(manifest.name.length <= 45);
   });
 
+  await test("U37", "Preview choices follow assigned playlist and clip to the visible viewport", async () => {
+    assert.deepStrictEqual(StorageService.getPreviewMediaIds({ playlist: ["a", "b", "a"], activeMediaId: "b" }), ["a", "b"]);
+    assert.deepStrictEqual(StorageService.getPreviewMediaIds({ activeMediaId: "solo" }), ["solo"]);
+    assert.deepStrictEqual(StorageService.getPreviewMediaIds({ playlist: ["", null] }), []);
+    assert.deepStrictEqual(StorageService.projectPreviewRect({ left: 100, top: 80, width: 400, height: 240 }, 1000, 800),
+      { x: 10, y: 10, width: 40, height: 30 });
+    assert.deepStrictEqual(StorageService.projectPreviewRect({ left: -100, top: 80, width: 400, height: 240 }, 1000, 800),
+      { x: 0, y: 10, width: 30, height: 30 });
+    assert.strictEqual(StorageService.projectPreviewRect({ left: 1100, top: 0, width: 200, height: 200 }, 1000, 800), null);
+  });
+
+  await test("U38", "Preview is a Studio workspace with a media selector and site snapshot", async () => {
+    const html = fs.readFileSync(path.join(__dirname, "..", "studio.html"), "utf8");
+    const js = fs.readFileSync(path.join(__dirname, "..", "studio.js"), "utf8");
+    const contentJs = fs.readFileSync(path.join(__dirname, "..", "content.js"), "utf8");
+    assert(html.includes('id="tabBtnPreview"') && html.includes('id="viewPreview"'));
+    assert(html.includes('id="previewMediaSelect"') && html.includes('id="btnRefreshPreviewSnapshot"'));
+    assert(!html.includes('id="mediaFramingDialog"'));
+    assert(js.includes("captureVisibleTab") && js.includes("CHAMELEON_GET_PREVIEW_BOUNDS"));
+    assert(!js.includes("getDisplayMedia"));
+    assert(contentJs.includes('case "CHAMELEON_GET_PREVIEW_BOUNDS"'));
+  });
+
   const failed = results.filter((r) => r.status === "FAIL");
   const report = {
     suite: "Tier 1 — Node.js Unit Tests",

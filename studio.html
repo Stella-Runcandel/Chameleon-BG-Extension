@@ -22,6 +22,7 @@
 
       <nav class="studio-nav" aria-label="Studio workspace views">
         <button type="button" class="nav-tab active" data-view="editor" id="tabBtnEditor">Visual Editor</button>
+        <button type="button" class="nav-tab" data-view="preview" id="tabBtnPreview">Preview</button>
         <button type="button" class="nav-tab" data-view="library" id="tabBtnLibrary">Media Library</button>
 <button type="button" class="nav-tab" data-view="websites" id="tabBtnWebsites">Websites</button>
         <button type="button" class="nav-tab" data-view="settings" id="tabBtnSettings">Settings &amp; Permissions</button>
@@ -125,37 +126,11 @@
           </div>
           <div class="map-assignment-actions">
             <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose background</button>
-            <button type="button" class="btn" id="btnOpenMediaPreview">Preview &amp; frame</button>
             <button type="button" class="btn" id="btnOpenFullMediaLibrary">Open Media Library</button>
           </div>
         </div>
       </div>
     </section>
-
-    <dialog id="mediaFramingDialog" class="media-framing-dialog" aria-labelledby="mediaFramingHeading">
-      <div class="media-framing-shell">
-        <div class="media-framing-header">
-          <div>
-            <h2 id="mediaFramingHeading">Preview background</h2>
-            <p id="mediaFramingAreaName">Selected area</p>
-          </div>
-          <button type="button" class="btn" id="btnCloseMediaPreview">Back to editor</button>
-        </div>
-        <div class="media-framing-stage" id="mediaFramingStage" aria-label="Background media preview">
-          <p id="mediaFramingNotice">Choose a background for this area to see it here.</p>
-          <div id="mediaFramingVisual" class="media-framing-visual" hidden></div>
-        </div>
-        <div class="media-framing-controls">
-          <label for="sliderMediaZoom">Zoom <output id="valMediaZoom">100%</output></label>
-          <input type="range" id="sliderMediaZoom" min="100" max="300" value="100" />
-          <label for="sliderMediaPositionX">Horizontal position <output id="valMediaPositionX">50%</output></label>
-          <input type="range" id="sliderMediaPositionX" min="0" max="100" value="50" />
-          <label for="sliderMediaPositionY">Vertical position <output id="valMediaPositionY">50%</output></label>
-          <input type="range" id="sliderMediaPositionY" min="0" max="100" value="50" />
-          <p>Changes auto-save. Use Back or Forward in the editor to undo or redo framing.</p>
-        </div>
-      </div>
-    </dialog>
 
     <!-- On-demand media picker: keeps the editor canvas focused until media is needed. -->
     <dialog id="editorMediaPickerDialog" class="media-picker-dialog" aria-labelledby="editorMediaPickerHeading">
@@ -420,6 +395,45 @@
       </div>
     </aside>
   </main>
+
+  <section id="viewPreview" class="secondary-view preview-view" hidden aria-labelledby="mediaFramingHeading">
+    <div class="preview-shell">
+      <div class="media-framing-header">
+        <div>
+          <h2 id="mediaFramingHeading">Preview on your website</h2>
+          <p id="mediaFramingAreaName">Selected area</p>
+        </div>
+        <button type="button" class="btn" id="btnCloseMediaPreview">Back to editor</button>
+      </div>
+      <div class="preview-toolbar">
+        <label for="previewMediaSelect">Background</label>
+        <select id="previewMediaSelect" class="select-field" aria-label="Choose assigned background to preview"></select>
+        <label for="previewModeSelect">Play</label>
+        <select id="previewModeSelect" class="select-field" aria-label="Preview one background or the playlist">
+          <option value="single">Selected item</option>
+          <option value="playlist">Playlist</option>
+        </select>
+        <button type="button" class="btn btn-primary" id="btnRefreshPreviewSnapshot">Refresh website snapshot</button>
+      </div>
+      <p class="preview-help" id="previewSnapshotStatus" role="status">The local website snapshot is a framing guide. Framing changes also update the real tab.</p>
+      <div class="media-framing-stage" id="mediaFramingStage" aria-label="Website snapshot and background framing preview">
+        <img id="previewSnapshotImage" class="preview-snapshot-image" alt="Captured website viewport" hidden />
+        <p id="mediaFramingNotice">Choose a background for this area to see it here.</p>
+        <div id="previewTargetRegion" class="preview-target-region">
+          <div id="mediaFramingVisual" class="media-framing-visual" hidden></div>
+        </div>
+      </div>
+      <div class="media-framing-controls">
+        <label for="sliderMediaZoom">Zoom <output id="valMediaZoom">100%</output></label>
+        <input type="range" id="sliderMediaZoom" min="100" max="300" value="100" />
+        <label for="sliderMediaPositionX">Horizontal position <output id="valMediaPositionX">50%</output></label>
+        <input type="range" id="sliderMediaPositionX" min="0" max="100" value="50" />
+        <label for="sliderMediaPositionY">Vertical position <output id="valMediaPositionY">50%</output></label>
+        <input type="range" id="sliderMediaPositionY" min="0" max="100" value="50" />
+        <p>Framing changes appear in the preview and save using your current Auto-save setting. Back and Forward in the editor can undo them.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- VIEW 2: DEDICATED MEDIA LIBRARY MANAGEMENT -->
   <section id="viewLibrary" class="secondary-view" hidden aria-labelledby="libraryViewHeading">
