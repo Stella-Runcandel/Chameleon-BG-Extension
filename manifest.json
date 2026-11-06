@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "ChameleonBG - Test",
-  "version": "2.3.0",
+  "name": "ChameleonBG — Custom Website Backgrounds",
+  "version": "2.4.0",
   "description": "Firefox visual background studio with reliable audio playback, Domain Themes, safe data lifecycle, and streamlined site access.",
   "permissions": [
     "storage",
@@ -13,7 +13,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "ChameleonBG - Test Studio",
+    "default_title": "ChameleonBG Studio",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -35,7 +35,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "chameleonbg-test@local.experimental",
+      "id": "chameleonbg@local.experimental",
       "data_collection_permissions": {
         "required": ["none"]
       }
