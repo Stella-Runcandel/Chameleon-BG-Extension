@@ -30,6 +30,7 @@
     </div>
 
     <div class="topbar-right">
+      <button type="button" class="btn studio-theme-toggle" id="btnStudioThemeToggle" aria-label="Switch to light mode" aria-pressed="false" title="Switch Studio color mode">☀ <span>Light</span></button>
       <button type="button" class="btn btn-video-global-toggle" id="btnPauseBackgroundVideos" data-editor-only="true" aria-pressed="false" title="Pause all ChameleonBG background videos in open authorized tabs">Pause videos</button>
       <label class="autosave-pill" data-editor-only="true" title="Automatically save changes to this website as you edit">
         <input type="checkbox" id="chkStudioAutoSave" checked />
@@ -563,6 +564,17 @@
                 <span>Allow ChameleonBG to run on sites I have enabled</span>
               </label>
               <p class="settings-note">Turning this off keeps themes, permissions, and media saved.</p>
+            </div>
+            <div class="settings-card">
+              <h4>Studio appearance</h4>
+              <div class="settings-control-narrow">
+                <label for="setStudioThemeMode">Color mode</label>
+                <select id="setStudioThemeMode" class="select-field">
+                  <option value="dark">Dark · vivid purple and green</option>
+                  <option value="light">Light · soft purple and green</option>
+                </select>
+              </div>
+              <p class="settings-note">Applies to the Studio only. Website backgrounds and saved setups stay as they are.</p>
             </div>
           </section>
 

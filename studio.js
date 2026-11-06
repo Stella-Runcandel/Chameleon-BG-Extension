@@ -16,6 +16,30 @@
 (() => {
   "use strict";
 
+  const STUDIO_THEME_KEY = "chameleonStudioColorMode";
+  let studioThemeMode = "dark";
+  try { studioThemeMode = localStorage.getItem(STUDIO_THEME_KEY) === "light" ? "light" : "dark"; } catch (_) {}
+  document.documentElement.dataset.studioTheme = studioThemeMode;
+
+  function applyStudioTheme(mode) {
+    studioThemeMode = mode === "light" ? "light" : "dark";
+    document.documentElement.dataset.studioTheme = studioThemeMode;
+    const toggle = document.getElementById("btnStudioThemeToggle");
+    if (toggle) {
+      const nextMode = studioThemeMode === "dark" ? "light" : "dark";
+      toggle.replaceChildren(document.createTextNode(studioThemeMode === "dark" ? "☀ " : "☾ "));
+      const label = document.createElement("span");
+      label.textContent = nextMode === "light" ? "Light" : "Dark";
+      toggle.append(label);
+      toggle.setAttribute("aria-label", `Switch to ${nextMode} mode`);
+      toggle.setAttribute("aria-pressed", String(studioThemeMode === "light"));
+      toggle.title = `Switch Studio to ${nextMode} mode`;
+    }
+    const settingsSelect = document.getElementById("setStudioThemeMode");
+    if (settingsSelect) settingsSelect.value = studioThemeMode;
+    try { localStorage.setItem(STUDIO_THEME_KEY, studioThemeMode); } catch (_) {}
+  }
+
   const params = new URLSearchParams(window.location.search);
   let targetTabId = params.get("tabId") ? Number(params.get("tabId")) : null;
   let studioTabId = null;
@@ -1125,7 +1149,7 @@
 
     if (playlist.length === 0) {
       const emptyP = document.createElement("p");
-      emptyP.style.cssText = "font-size:11.5px;color:#94a3b8;";
+      emptyP.className = "playlist-empty-note";
       emptyP.textContent = `Drag or click a media item from the library to assign it to ${comp.label}.`;
       playlistContainer.appendChild(emptyP);
     } else {
@@ -1917,7 +1941,8 @@
     // Draft actions only belong to the editor. Keeping them visible on Settings or
     // Media Library made those screens look like a continuation of the editor.
     document.querySelectorAll("[data-editor-only=\"true\"]").forEach((el) => {
-      el.hidden = currentView !== "editor";
+      const isDraftAction = el.id === "btnStudioDiscard" || el.id === "btnStudioSave";
+      el.hidden = currentView !== "editor" || (isDraftAction && studioAutoSaveEnabled && !hasUnsavedPreviewChanges());
     });
     document.title = currentView === "library"
       ? "ChameleonBG — Media Library"
@@ -2517,6 +2542,7 @@
   }
 
   function syncSettingsControls() {
+    applyStudioTheme(studioThemeMode);
     const globalEnabled = document.getElementById("setGlobalEnabled");
     if (globalEnabled) globalEnabled.checked = globalSettings.extensionEnabled !== false;
     document.getElementById("chkConvertToWebP").checked = Boolean(globalSettings.autoConvertWebP);
@@ -2680,6 +2706,8 @@
       try {
         const res = await sendRuntimeMessage({ type: "CHAMELEON_CLEAR_ALL_DATA", confirmed: true });
         if (!res?.ok) throw new Error(res?.error || "Clear failed.");
+        applyStudioTheme("dark");
+        try { localStorage.removeItem(STUDIO_THEME_KEY); } catch (_) {}
         showAlert("All ChameleonBG data has been cleared.");
         savedSiteConfig = { siteKey: targetSiteKey, hostname: targetHostname, matchScope: "origin", enabled: true, revision: 0, components: {} };
         workingSiteConfig = deepClone(savedSiteConfig);
@@ -2712,6 +2740,9 @@
   }
 
   function bindAllEvents() {
+    applyStudioTheme(studioThemeMode);
+    document.getElementById("btnStudioThemeToggle")?.addEventListener("click", () => applyStudioTheme(studioThemeMode === "dark" ? "light" : "dark"));
+    document.getElementById("setStudioThemeMode")?.addEventListener("change", (event) => applyStudioTheme(event.target.value));
     for (const [id, view] of [["editorTabAreas", "areas"], ["editorTabAppearance", "appearance"]]) {
       const tab = document.getElementById(id);
       tab?.addEventListener("click", () => setEditorSidebarView(view));
