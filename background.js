@@ -42,6 +42,7 @@ const SITE_ACCESS_KEY_PREFIX = ChameleonAccessControl.SITE_ACCESS_KEY_PREFIX;
 const SITE_CONFIG_KEY_PREFIX = "siteCfg::";
 const INJECTED_FILES = ["storage-service.js", "video-manager.js", "selection-engine.js", "renderer-engine.js", "content.js"];
 const SELECT_AREA_MENU_ID = "chameleon-select-area";
+const SELECT_AREA_MENU_TITLE = "Choose area";
 const inFlightInjections = new Map();
 const PENDING_ENABLE_KEY_PREFIX = "pendingEnable::";
 const PENDING_ENABLE_TTL_MS = 2 * 60 * 1000;
@@ -483,7 +484,7 @@ function registerSelectAreaContextMenu() {
   if (!chrome.contextMenus?.create) return;
   chrome.contextMenus.create({
     id: SELECT_AREA_MENU_ID,
-    title: "Choose area",
+    title: SELECT_AREA_MENU_TITLE,
     contexts: ["page", "frame", "link", "image", "video", "audio", "selection", "editable"],
     documentUrlPatterns: ["http://*/*", "https://*/*"]
   }, () => {
@@ -665,6 +666,15 @@ chrome.runtime.onInstalled.addListener(() => {
     .then(() => deactivateLegacyProfilesWithoutConsent())
     .finally(() => restoreAuthorizedOpenTabs());
 });
+
+// Firefox can retain an existing menu item across temporary add-on reloads.
+// Refresh its title whenever the background starts, even if onInstalled does not run.
+if (chrome.contextMenus?.update) {
+  chrome.contextMenus.update(SELECT_AREA_MENU_ID, { title: SELECT_AREA_MENU_TITLE }, () => {
+    // A fresh install has no item yet; onInstalled creates it.
+    if (chrome.runtime.lastError) return;
+  });
+}
 
 if (chrome.contextMenus?.onClicked) {
   chrome.contextMenus.onClicked.addListener((info, tab) => {

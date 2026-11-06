@@ -679,6 +679,7 @@ async function runUnitTests() {
       remove(keys, callback) { for (const key of (Array.isArray(keys) ? keys : [keys])) delete store[key]; if (callback) callback(); return Promise.resolve(); }
     };
     const calls = { created: [], updated: [], runtimeMessages: [], tabMessages: [], menus: [] };
+    const menuItems = new Map(options.existingMenu ? [[options.existingMenu.id, { ...options.existingMenu }]] : []);
     let onMessageListener = null;
     const mockChrome = {
       runtime: {
@@ -695,7 +696,12 @@ async function runUnitTests() {
         contains(_details, callback) { const v = options.permissionGranted === true; if (callback) callback(v); return Promise.resolve(v); }
       },
       contextMenus: {
-        create(info, callback) { calls.menus.push(info); if (callback) callback(); },
+        create(info, callback) { calls.menus.push(info); menuItems.set(info.id, { ...info }); if (callback) callback(); },
+        update(id, changes, callback) {
+          const item = menuItems.get(id);
+          if (item) menuItems.set(id, { ...item, ...changes });
+          if (callback) callback();
+        },
         onClicked: event("menu-clicked")
       },
       alarms: { create(_n, _i, cb) { if (cb) cb(); return Promise.resolve(); }, onAlarm: event("alarm") },
@@ -723,7 +729,7 @@ async function runUnitTests() {
     const studioSender = { id: extensionId, url: `moz-extension://${extensionId}/studio.html` };
     const popupSender = { id: extensionId, url: `moz-extension://${extensionId}/popup.html` };
     const pageSender = { id: extensionId, url: "https://example.com/page", tab: { id: 7 }, frameId: 0 };
-    return { store, calls, listeners, dispatch, studioSender, popupSender, pageSender, extensionId };
+    return { store, calls, menuItems, listeners, dispatch, studioSender, popupSender, pageSender, extensionId };
   }
 
   await test("U15", "Websites dashboard commands list sites and delete settings only (media/consent kept)", async () => {
@@ -770,6 +776,10 @@ async function runUnitTests() {
     const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.json"), "utf8"));
     assert(manifest.permissions.includes("contextMenus"), "The menu uses the declared browser permission");
     const tab = { id: 7, url: "https://example.com/watch", title: "Example" };
+    const retained = makeBackgroundHarness({}, [tab], {
+      existingMenu: { id: "chameleon-select-area", title: "Select area with ChameleonBG" }
+    });
+    assert.strictEqual(retained.menuItems.get("chameleon-select-area").title, "Choose area", "Background startup updates the title of a retained Firefox menu item");
     const enabled = makeBackgroundHarness({
       "siteAccess::https%3A%2F%2Fexample.com": {
         origin: "https://example.com", enabled: true, consentVersion: 1,
