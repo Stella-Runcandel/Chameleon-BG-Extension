@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "ChameleonBG — Custom Website Backgrounds",
+  "version": "2.4.0",
+  "description": "Local website background studio with media playlists, visual adjustments, previews, and reusable Domain Themes.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "alarms"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ChameleonBG Studio",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ]
+}
