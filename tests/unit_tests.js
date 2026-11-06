@@ -1440,6 +1440,14 @@ async function runUnitTests() {
     assert.deepStrictEqual(StorageService.normalizeMediaFraming({}), { zoom: 100, x: 50, y: 50 });
   });
 
+  await test("U36", "Firefox test build has a separate name and add-on ID", async () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.json"), "utf8"));
+    assert.strictEqual(manifest.name, "ChameleonBG - Test");
+    assert.strictEqual(manifest.browser_specific_settings.gecko.id, "chameleonbg-test@local.experimental");
+    assert.strictEqual(manifest.action.default_title, "ChameleonBG - Test Studio");
+    assert(manifest.name.length <= 45);
+  });
+
   const failed = results.filter((r) => r.status === "FAIL");
   const report = {
     suite: "Tier 1 — Node.js Unit Tests",

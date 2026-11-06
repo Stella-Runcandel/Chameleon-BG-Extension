@@ -38,6 +38,8 @@ ChameleonBG lets users select regions of websites and apply custom image/video b
 
 ## 2. Install in Firefox (Temporary Add-on)
 
+This local build appears in Firefox as **ChameleonBG - Test**. Its Firefox add-on ID is `chameleonbg-test@local.experimental`, separate from the previous `chameleonbg@local.experimental` ID. Firefox keeps their extension storage separate, so existing media and settings from the previous ID will not appear in this test build.
+
 1. Extract the extension ZIP or clone the repository.
 2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…** and select `manifest.json` inside the extension directory.
@@ -45,7 +47,7 @@ ChameleonBG lets users select regions of websites and apply custom image/video b
 5. Click **I understand — allow access** to grant optional host permissions for that origin.
 6. Use **Open Visual Editor** to customize regions, assign media, and configure domain themes.
 
-> **Note:** Temporary add-ons are removed when Firefox restarts. Load `manifest.json` again or use `web-ext run` during development.
+> **Note:** Temporary add-ons are removed when Firefox restarts. Load `manifest.json` again or use `web-ext run` during development. If an older ChameleonBG build is still loaded, Firefox may show two toolbar icons. Keep the older add-on until you have exported any media or settings you need; removing an add-on can clear its browser-managed storage.
 
 ---
 
@@ -76,7 +78,7 @@ or via the Python test runner:
 python tests/run_all_tests.py --tier 1
 ```
 
-All 33 unit tests pass (`33/33 PASS`):
+The unit suite now includes 36 tests (`U1`–`U36`):
 * **U1–U7**: Origin isolation, animated GIF detection, deep SVG/CSS sanitization, bounded chunked media transport, conflict-safe storage, v2.0 config migration, origin migration markers.
 * **U8–U13**: Permission gate & consent, studio view isolation, live picker routing, popup-to-studio handoff, structured map & sticky settings, media selection & video rotation.
 * **U14–U18**: Trusted capability check, websites listing/safe deletion, single-instance studio reuse, pending enable intents, synchronous user gesture consent.
