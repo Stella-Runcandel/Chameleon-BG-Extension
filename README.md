@@ -19,10 +19,7 @@ Build the upload ZIP with Python 3.8 or newer:
 python scripts/build_firefox.py
 ```
 
-This creates `dist/chameleonbg-2.4.0-firefox-upload.zip`. Upload that ZIP as a
-new version of the existing add-on in the [Firefox Developer Hub](https://addons.mozilla.org/developers/).
-Firefox signs the accepted upload. The local ZIP is not signed and is not a
-normal-installable XPI.
+This creates `dist/chameleonbg-2.4.0-firefox-upload.zip`. Extract it. Add extension to your firefox.
 
 Run the local unit checks before uploading:
 
