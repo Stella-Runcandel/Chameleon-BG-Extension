@@ -251,8 +251,11 @@
     if (/<!DOCTYPE|<!ENTITY/i.test(rawText)) {
       throw new Error("Rejected unsafe SVG: XML DOCTYPE or ENTITY declarations are not permitted.");
     }
+    if (typeof DOMParser === "undefined" || typeof XMLSerializer === "undefined") {
+      throw new Error("SVG import is unavailable because the XML parser is unavailable in this browser context.");
+    }
 
-    // Regex pre-pass for worker environments without DOMParser
+    // Remove known active constructs before parsing, then enforce the positive allowlist.
     let cleaned = rawText
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
       .replace(/<foreignObject[\s\S]*?>[\s\S]*?<\/foreignObject>/gi, "")
@@ -2383,6 +2386,18 @@
     return `${(n / (1024 * 1024)).toFixed(2)} MB`;
   }
 
+  function normalizeMediaFraming(config = {}) {
+    const clamp = (value, fallback, min, max) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+    };
+    return {
+      zoom: clamp(config.mediaZoom, 100, 100, 300),
+      x: clamp(config.mediaPositionX, 50, 0, 100),
+      y: clamp(config.mediaPositionY, 50, 0, 100)
+    };
+  }
+
   const StorageService = {
     EXT_DB_NAME,
     MEDIA_STORE,
@@ -2426,6 +2441,7 @@
     assignSiteToTheme,
     findThemeForTarget,
     resolveEffectiveConfig,
+    normalizeMediaFraming,
     getMediaUsageReferences,
     pruneDeletedMediaReferences,
     isSafeHttpOrFileSiteKey,

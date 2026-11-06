@@ -125,11 +125,37 @@
           </div>
           <div class="map-assignment-actions">
             <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose background</button>
+            <button type="button" class="btn" id="btnOpenMediaPreview">Preview &amp; frame</button>
             <button type="button" class="btn" id="btnOpenFullMediaLibrary">Open Media Library</button>
           </div>
         </div>
       </div>
     </section>
+
+    <dialog id="mediaFramingDialog" class="media-framing-dialog" aria-labelledby="mediaFramingHeading">
+      <div class="media-framing-shell">
+        <div class="media-framing-header">
+          <div>
+            <h2 id="mediaFramingHeading">Preview background</h2>
+            <p id="mediaFramingAreaName">Selected area</p>
+          </div>
+          <button type="button" class="btn" id="btnCloseMediaPreview">Back to editor</button>
+        </div>
+        <div class="media-framing-stage" id="mediaFramingStage" aria-label="Background media preview">
+          <p id="mediaFramingNotice">Choose a background for this area to see it here.</p>
+          <div id="mediaFramingVisual" class="media-framing-visual" hidden></div>
+        </div>
+        <div class="media-framing-controls">
+          <label for="sliderMediaZoom">Zoom <output id="valMediaZoom">100%</output></label>
+          <input type="range" id="sliderMediaZoom" min="100" max="300" value="100" />
+          <label for="sliderMediaPositionX">Horizontal position <output id="valMediaPositionX">50%</output></label>
+          <input type="range" id="sliderMediaPositionX" min="0" max="100" value="50" />
+          <label for="sliderMediaPositionY">Vertical position <output id="valMediaPositionY">50%</output></label>
+          <input type="range" id="sliderMediaPositionY" min="0" max="100" value="50" />
+          <p>Changes auto-save. Use Back or Forward in the editor to undo or redo framing.</p>
+        </div>
+      </div>
+    </dialog>
 
     <!-- On-demand media picker: keeps the editor canvas focused until media is needed. -->
     <dialog id="editorMediaPickerDialog" class="media-picker-dialog" aria-labelledby="editorMediaPickerHeading">
@@ -570,6 +596,7 @@
             <div class="settings-card">
               <h4>Manage website access</h4>
               <p class="settings-note">Visit a website and open the ChameleonBG toolbar popup to enable or pause that site, or revoke its browser permission. Revoking access preserves saved customizations; deleting those settings is a separate action.</p>
+              <div id="settingsSiteAccessSummary" class="settings-site-summary" role="status">Loading saved website access…</div>
               <p class="settings-note">Some websites may restrict visual-modification extensions. Review the site's applicable policies before enabling access. ChameleonBG cannot determine or guarantee whether a particular site's rules permit an extension.</p>
               <div class="settings-inline-actions">
                 <button type="button" class="btn" id="btnOpenSiteAccessHelp">How site access works</button>

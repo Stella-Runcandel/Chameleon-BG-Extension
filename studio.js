@@ -77,6 +77,13 @@
   let activeMediaRenderUrls = new Set();
   let mediaRenderRevision = 0;
   let settingsSectionObserver = null;
+  let framingPreviewUrl = null;
+  let framingPreviewRevision = 0;
+
+  function releaseFramingPreviewUrl() {
+    if (framingPreviewUrl) URL.revokeObjectURL(framingPreviewUrl);
+    framingPreviewUrl = null;
+  }
 
   function releaseStudioUrlSet(urlSet) {
     for (const url of urlSet) {
@@ -348,6 +355,83 @@
     renderCenterLayoutMap();
     renderRightInspectorPanel();
     renderMediaLibraryGrids();
+    if (document.getElementById("mediaFramingDialog")?.open) renderMediaFramingPreview();
+  }
+
+  function updateMediaFramingVisual() {
+    const cfg = workingSiteConfig.components?.[selectedCompId] || {};
+    const framing = ChameleonStorageService.normalizeMediaFraming(cfg);
+    for (const [id, value] of [["Zoom", framing.zoom], ["PositionX", framing.x], ["PositionY", framing.y]]) {
+      document.getElementById(`sliderMedia${id}`).value = String(value);
+      document.getElementById(`valMedia${id}`).textContent = `${value}%`;
+    }
+    const media = document.querySelector("#mediaFramingVisual > *");
+    if (media) {
+      media.style.transformOrigin = `${framing.x}% ${framing.y}%`;
+      media.style.transform = `scale(${framing.zoom / 100})`;
+      if (media.tagName === "VIDEO" || media.tagName === "IMG") media.style.objectPosition = `${framing.x}% ${framing.y}%`;
+      else media.style.backgroundPosition = `${framing.x}% ${framing.y}%`;
+    }
+  }
+
+  function setMediaFramingControlsEnabled(enabled) {
+    for (const id of ["sliderMediaZoom", "sliderMediaPositionX", "sliderMediaPositionY"]) {
+      document.getElementById(id).disabled = !enabled;
+    }
+  }
+
+  async function renderMediaFramingPreview() {
+    const revision = ++framingPreviewRevision;
+    const visual = document.getElementById("mediaFramingVisual");
+    const notice = document.getElementById("mediaFramingNotice");
+    const comp = detectedComponents.find((item) => item.id === selectedCompId) || detectedComponents[0];
+    document.getElementById("mediaFramingAreaName").textContent = comp?.label || "Selected area";
+    visual.replaceChildren();
+    visual.hidden = true;
+    setMediaFramingControlsEnabled(false);
+    releaseFramingPreviewUrl();
+    updateMediaFramingVisual();
+    const cfg = workingSiteConfig.components?.[selectedCompId];
+    const mediaId = cfg?.activeMediaId || cfg?.playlist?.[0];
+    if (!mediaId) {
+      notice.textContent = "Choose a background for this area to see it here.";
+      notice.hidden = false;
+      return;
+    }
+    notice.textContent = "Loading preview…";
+    notice.hidden = false;
+    try {
+      const record = await ChameleonStorageService.getMediaRecordWithBlob(mediaId);
+      if (revision !== framingPreviewRevision || !document.getElementById("mediaFramingDialog").open) return;
+      if (!record || (record.mediaType !== "preset" && !record.blob)) {
+        notice.textContent = "This background is missing from your library. Choose another item.";
+        return;
+      }
+      let media;
+      if (record.mediaType === "preset") {
+        media = document.createElement("div");
+        media.className = "media-framing-preset";
+        media.style.background = record.gradient;
+      } else {
+        media = document.createElement(record.mediaType === "video" ? "video" : "img");
+        framingPreviewUrl = URL.createObjectURL(record.blob);
+        media.src = framingPreviewUrl;
+        if (record.mediaType === "video") {
+          media.controls = true;
+          media.muted = true;
+          media.preload = "metadata";
+        } else {
+          media.alt = record.name || "Selected background";
+        }
+      }
+      visual.appendChild(media);
+      visual.hidden = false;
+      notice.hidden = true;
+      setMediaFramingControlsEnabled(true);
+      updateMediaFramingVisual();
+    } catch (_) {
+      if (revision === framingPreviewRevision) notice.textContent = "Preview could not load. Choose another background or try again.";
+    }
   }
 
   function updateTopbarDraftControls() {
@@ -1168,6 +1252,9 @@
       videoAudioRequestedAt: 0,
       shuffle: false,
       fitMode: "cover",
+      mediaZoom: 100,
+      mediaPositionX: 50,
+      mediaPositionY: 50,
       opacity: 85,
       brightness: 100,
       contrast: 100,
@@ -1551,9 +1638,43 @@
           ? "ChameleonBG — Settings"
           : "ChameleonBG — Visual Editor";
     if (currentView === "settings") requestAnimationFrame(() => setActiveSettingsNav("settings-general"));
+    if (currentView === "settings") renderSettingsSiteAccessSummary();
     if (currentView === "websites" && previousView !== "websites") {
       renderWebsitesView().catch((err) => showAlert(`Could not load websites: ${err?.message || err}`, true));
     }
+  }
+
+  async function renderSettingsSiteAccessSummary() {
+    const root = document.getElementById("settingsSiteAccessSummary");
+    if (!root) return;
+    root.textContent = "Checking saved website access…";
+    const response = await sendRuntimeMessage({ type: "CHAMELEON_LIST_SITES" });
+    if (currentView !== "settings") return;
+    if (!response?.ok || !Array.isArray(response.sites)) {
+      root.textContent = "Could not check website access. Reopen Settings to try again.";
+      return;
+    }
+    if (response.sites.length === 0) {
+      root.textContent = "No websites have saved backgrounds yet. Open the toolbar popup on a site to grant access.";
+      return;
+    }
+    const list = document.createElement("ul");
+    list.className = "settings-site-list";
+    for (const site of response.sites) {
+      const row = document.createElement("li");
+      const name = document.createElement("strong");
+      name.textContent = site.origin;
+      const status = document.createElement("span");
+      status.textContent = !site.browserPermissionPresent
+        ? "Browser permission needed — open this site and use the toolbar popup"
+        : !site.persistentGrantRecorded || !site.consentAccepted
+          ? "Consent needs review — use the toolbar popup"
+          : !globalSettings.extensionEnabled ? "Paused globally"
+            : site.enabled ? "Enabled" : "Paused";
+      row.append(name, status);
+      list.appendChild(row);
+    }
+    root.replaceChildren(list);
   }
 
   // =========================================================================
@@ -2275,6 +2396,31 @@
   }
 
   function bindAllEvents() {
+    const framingDialog = document.getElementById("mediaFramingDialog");
+    document.getElementById("btnOpenMediaPreview")?.addEventListener("click", () => {
+      framingDialog.showModal();
+      renderMediaFramingPreview();
+    });
+    document.getElementById("btnCloseMediaPreview")?.addEventListener("click", () => framingDialog.close());
+    framingDialog?.addEventListener("close", () => {
+      ++framingPreviewRevision;
+      releaseFramingPreviewUrl();
+      document.getElementById("mediaFramingVisual").replaceChildren();
+    });
+    for (const [id, property] of [["sliderMediaZoom", "mediaZoom"], ["sliderMediaPositionX", "mediaPositionX"], ["sliderMediaPositionY", "mediaPositionY"]]) {
+      const slider = document.getElementById(id);
+      slider.addEventListener("pointerdown", () => pushUndoState());
+      slider.addEventListener("keydown", (event) => {
+        if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) pushUndoState();
+      });
+      slider.addEventListener("input", () => {
+        const comp = detectedComponents.find((item) => item.id === selectedCompId) || detectedComponents[0];
+        if (!comp) return;
+        ensureComponentInWorkingConfig(comp)[property] = Number(slider.value);
+        updateMediaFramingVisual();
+        pushLivePreviewToTab(false);
+      });
+    }
     bindDataLifecycleEvents();
     document.querySelectorAll(".nav-tab").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -2663,6 +2809,7 @@
         type: "CHAMELEON_SAVE_GLOBAL_SETTINGS",
         globalSettings
       });
+      if (currentView === "settings") renderSettingsSiteAccessSummary();
     };
 
     ["setGlobalEnabled", "chkConvertToWebP", "chkPreserveOriginal", "setEcoMode", "setMaxVideos", "setMaxDimension", "setMaxMediaSizeMB"].forEach((id) => {

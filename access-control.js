@@ -112,6 +112,15 @@
     };
   }
 
+  function isMediaAssignedToSite(siteConfig, mediaId) {
+    if (!siteConfig || !mediaId || typeof mediaId !== "string") return false;
+    return Object.values(siteConfig.components || {}).some((component) =>
+      component && component.enabled !== false &&
+      (component.activeMediaId === mediaId ||
+        (Array.isArray(component.playlist) && component.playlist.includes(mediaId)))
+    );
+  }
+
   const api = Object.freeze({
     SITE_CONSENT_VERSION,
     SITE_ACCESS_KEY_PREFIX,
@@ -120,7 +129,8 @@
     hostPermissionPatternCovers,
     siteAccessStorageKey,
     hasPersistentHostGrant,
-    evaluateSiteAccess
+    evaluateSiteAccess,
+    isMediaAssignedToSite
   });
 
   root.ChameleonAccessControl = api;

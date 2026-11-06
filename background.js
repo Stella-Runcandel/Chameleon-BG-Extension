@@ -404,6 +404,9 @@ async function listSavedSites() {
     const components = cfg.components && typeof cfg.components === "object" ? Object.values(cfg.components) : [];
     if (!components.length) continue;
     const access = all[siteAccessStorageKey(parsed.origin)] || null;
+    const permissionPattern = originPermissionPatternForUrl(parsed.href);
+    const browserPermissionPresent = await hasPersistentlyGrantedOriginPattern(permissionPattern);
+    const persistentGrantRecorded = ChameleonAccessControl.hasPersistentHostGrant(browserPermissionPresent, access, permissionPattern);
     const openTabIds = tabs.filter((t) => {
       const u = parseSupportedPageUrl(t.url);
       return u && u.origin.toLowerCase() === parsed.origin.toLowerCase();
@@ -414,6 +417,9 @@ async function listSavedSites() {
       componentCount: components.length,
       customizedCount: components.filter((c) => c && c.enabled !== false && ((c.playlist && c.playlist.length > 0) || c.activeMediaId)).length,
       enabled: Boolean(access && access.enabled === true && cfg.enabled !== false),
+      browserPermissionPresent,
+      persistentGrantRecorded,
+      consentAccepted: Boolean(access && access.consentVersion === ChameleonAccessControl.SITE_CONSENT_VERSION && Number(access.consentAcceptedAt) > 0),
       themeId: cfg.themeId || null,
       updatedAt: Number(cfg.updatedAt) || 0,
       openTabIds
@@ -845,6 +851,11 @@ if (chrome.runtime && chrome.runtime.onConnect) {
             const portState = port.sender && port.sender.url ? await getSiteRuntimeState(port.sender.url) : null;
             if (!portState || !portState.allowed) {
               safePostMessage({ type: "TRANSFER_ERROR", transferId, code: "FORBIDDEN", error: "Media access is not enabled for this site." });
+              return;
+            }
+            const assignment = await ChameleonStorageService.getSiteConfigForTarget(chrome.storage.local, port.sender.url);
+            if (!ChameleonAccessControl.isMediaAssignedToSite(assignment?.siteConfig, String(msg.mediaId))) {
+              safePostMessage({ type: "TRANSFER_ERROR", transferId, code: "FORBIDDEN", error: "This media is not assigned to this site." });
               return;
             }
           }

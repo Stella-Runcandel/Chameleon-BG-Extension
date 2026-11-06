@@ -151,16 +151,20 @@ async function runUnitTests() {
       `</svg>`
     ], { type: "image/svg+xml" });
 
-    const cleanBlob = await StorageService.sanitizeSvgBlob(dirtySvg);
-    const cleanText = await cleanBlob.text();
-    assert(!cleanText.includes("<script"), "Must strip <script>");
-    assert(!cleanText.includes("<foreignObject"), "Must strip <foreignObject>");
-    assert(!cleanText.includes("<use"), "Must strip <use>");
-    assert(!cleanText.includes("<image"), "Must strip <image>");
-    assert(!cleanText.includes("<feImage"), "Must strip <feImage>");
-    assert(!cleanText.includes("<animate"), "Must strip <animate>");
-    assert(!cleanText.includes("onload=") && !cleanText.includes("onclick="), "Must strip on* event handlers");
-    assert(!cleanText.includes("evil.example"), "Must strip external URLs");
+    if (typeof DOMParser === "undefined") {
+      await assert.rejects(() => StorageService.sanitizeSvgBlob(dirtySvg), /XML parser.*unavailable/i);
+    } else {
+      const cleanBlob = await StorageService.sanitizeSvgBlob(dirtySvg);
+      const cleanText = await cleanBlob.text();
+      assert(!cleanText.includes("<script"), "Must strip <script>");
+      assert(!cleanText.includes("<foreignObject"), "Must strip <foreignObject>");
+      assert(!cleanText.includes("<use"), "Must strip <use>");
+      assert(!cleanText.includes("<image"), "Must strip <image>");
+      assert(!cleanText.includes("<feImage"), "Must strip <feImage>");
+      assert(!cleanText.includes("<animate"), "Must strip <animate>");
+      assert(!cleanText.includes("onload=") && !cleanText.includes("onclick="), "Must strip on* event handlers");
+      assert(!cleanText.includes("evil.example"), "Must strip external URLs");
+    }
 
     const dirtyCss = `@import url("https://evil.example/a.css"); fill: url("https://evil.example/b.png"); mask: url(#safeMask); width: expression(alert(1));`;
     const cleanCss = StorageService.sanitizeCssStyleText(dirtyCss);
@@ -1045,15 +1049,19 @@ async function runUnitTests() {
       `</svg>`
     ], { type: "image/svg+xml" });
 
-    const cleanSvg = await StorageService.sanitizeSvgBlob(dirtySvg);
-    const cleanSvgText = await cleanSvg.text();
-    assert(!cleanSvgText.includes("<foreignObject"), "Strips foreignObject");
-    assert(!cleanSvgText.includes("<iframe"), "Strips iframe");
-    assert(!cleanSvgText.includes("onclick="), "Strips onclick");
-    assert(!cleanSvgText.includes("onload="), "Strips onload");
-    assert(cleanSvgText.includes("<rect"), "Preserves whitelisted rect");
-    assert(cleanSvgText.includes("<path"), "Preserves whitelisted path");
-    return "Verified strict positive element allowlist stripping hostile, unknown, and active elements while keeping safe vector shapes";
+    if (typeof DOMParser === "undefined") {
+      await assert.rejects(() => StorageService.sanitizeSvgBlob(dirtySvg), /XML parser.*unavailable/i);
+    } else {
+      const cleanSvg = await StorageService.sanitizeSvgBlob(dirtySvg);
+      const cleanSvgText = await cleanSvg.text();
+      assert(!cleanSvgText.includes("<foreignObject"), "Strips foreignObject");
+      assert(!cleanSvgText.includes("<iframe"), "Strips iframe");
+      assert(!cleanSvgText.includes("onclick="), "Strips onclick");
+      assert(!cleanSvgText.includes("onload="), "Strips onload");
+      assert(cleanSvgText.includes("<rect"), "Preserves whitelisted rect");
+      assert(cleanSvgText.includes("<path"), "Preserves whitelisted path");
+    }
+    return "Verified SVG sanitization or fail-closed behavior when XML parsing is unavailable";
   });
 
   // 24. Verified legacy IndexedDB deletion only on 100% verified migration
@@ -1409,6 +1417,27 @@ async function runUnitTests() {
     assert(studioJs.includes("function openSaveCurrentSiteAsThemeModal()") && studioJs.includes("function applyThemeToCurrentSite(theme)"), "Studio wires 1-click theme creation from current site setup and 1-click Apply to Current Site");
 
     return "Verified topbar non-overlapping layout, Auto-Save + Back/Forward history stack, Loop Trim controls, Frosted Glass & Text Readability, and 1-click Reusable Themes";
+  });
+
+  await test("U34", "Page media access follows only the effective site assignments", async () => {
+    const config = { components: {
+      root_page: { activeMediaId: "hero", playlist: ["slide", "hero"] },
+      card: { activeMediaId: "card" }
+    } };
+    assert.strictEqual(AccessControl.isMediaAssignedToSite(config, "hero"), true);
+    assert.strictEqual(AccessControl.isMediaAssignedToSite(config, "slide"), true);
+    assert.strictEqual(AccessControl.isMediaAssignedToSite(config, "card"), true);
+    assert.strictEqual(AccessControl.isMediaAssignedToSite(config, "private-library-item"), false);
+    assert.strictEqual(AccessControl.isMediaAssignedToSite({ components: {} }, "hero"), false);
+    assert.strictEqual(AccessControl.isMediaAssignedToSite(config, ""), false);
+  });
+
+  await test("U35", "Media framing keeps zoom and position in safe bounds", async () => {
+    assert.deepStrictEqual(StorageService.normalizeMediaFraming({ mediaZoom: 175, mediaPositionX: 20, mediaPositionY: 80 }),
+      { zoom: 175, x: 20, y: 80 });
+    assert.deepStrictEqual(StorageService.normalizeMediaFraming({ mediaZoom: 999, mediaPositionX: -5, mediaPositionY: 140 }),
+      { zoom: 300, x: 0, y: 100 });
+    assert.deepStrictEqual(StorageService.normalizeMediaFraming({}), { zoom: 100, x: 50, y: 50 });
   });
 
   const failed = results.filter((r) => r.status === "FAIL");

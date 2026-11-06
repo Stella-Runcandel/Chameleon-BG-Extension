@@ -1319,6 +1319,8 @@
       const tintOpacity = Math.min(95, Math.max(0, Number(cfg.tintOpacity ?? 20))) / 100;
       const tintColor = cfg.tintColor || "#0f172a";
       const fitMode = cfg.fitMode || "cover";
+      const framing = globalScope.ChameleonStorageService?.normalizeMediaFraming(cfg) || { zoom: 100, x: 50, y: 50 };
+      const framingPosition = `${framing.x}% ${framing.y}%`;
 
       const filterParts = [];
       if (brightness !== 100) filterParts.push(`brightness(${brightness}%)`);
@@ -1328,19 +1330,21 @@
       const filterString = filterParts.length > 0 ? filterParts.join(" ") : "none";
 
       if (layer.mode === "mode-c") {
-        setRecordedInlineStyle(layer.targetEl, "background-size", fitMode === "repeat" ? "280px auto" : fitMode, "important", layer.compId);
+        setRecordedInlineStyle(layer.targetEl, "background-size", fitMode === "repeat" ? "280px auto" : framing.zoom === 100 ? fitMode : `${framing.zoom}% auto`, "important", layer.compId);
         setRecordedInlineStyle(layer.targetEl, "background-repeat", fitMode === "repeat" ? "repeat" : "no-repeat", "important", layer.compId);
-        setRecordedInlineStyle(layer.targetEl, "background-position", "center center", "important", layer.compId);
+        setRecordedInlineStyle(layer.targetEl, "background-position", framingPosition, "important", layer.compId);
         return;
       }
 
       if (layer.mediaEl) {
         layer.mediaEl.style.setProperty("opacity", String(opacity), "important");
         layer.mediaEl.style.setProperty("filter", filterString, "important");
+        layer.mediaEl.style.setProperty("transform-origin", framingPosition, "important");
+        layer.mediaEl.style.setProperty("transform", `scale(${framing.zoom / 100})`, "important");
 
         if (layer.mediaEl.tagName === "VIDEO") {
           layer.mediaEl.style.setProperty("object-fit", fitMode === "repeat" ? "cover" : fitMode, "important");
-          layer.mediaEl.style.setProperty("object-position", "center center", "important");
+          layer.mediaEl.style.setProperty("object-position", framingPosition, "important");
           layer.mediaEl.volume = Math.max(0, Math.min(1, Number(cfg.videoVolume ?? 35) / 100));
         } else {
           if (fitMode === "repeat") {
@@ -1349,7 +1353,7 @@
           } else {
             layer.mediaEl.style.setProperty("background-size", fitMode, "important");
             layer.mediaEl.style.setProperty("background-repeat", "no-repeat", "important");
-            layer.mediaEl.style.setProperty("background-position", "center center", "important");
+            layer.mediaEl.style.setProperty("background-position", framingPosition, "important");
           }
         }
       }
