@@ -54,6 +54,8 @@
   let frameNotices = [];
   let selectedCompId = "root_page";
   let editorSideView = "areas";
+  const areaGroupOpenStates = new Map();
+  let mapOutlineOpen = false;
   let mediaItems = [];
   let storageStats = { itemCount: 0, formattedTotal: "0 B" };
   let globalSettings = {
@@ -171,7 +173,7 @@
     const btnReload = document.getElementById("btnReloadConflictState");
     if (!banner || !text) return;
     text.textContent = message;
-    banner.style.borderColor = isWarning ? "#f59e0b" : "#38bdf8";
+    banner.style.borderColor = isWarning ? "#dfb36e" : "#bdabf3";
     if (btnOverwrite) btnOverwrite.hidden = !showConflictActions;
     if (btnReload) btnReload.hidden = !showConflictActions;
     banner.hidden = false;
@@ -618,8 +620,16 @@
     }
   }
 
+  function getComponentDisplayLabel(comp) {
+    const label = comp?.label || "Page area";
+    const matches = detectedComponents.filter((item) => item.label === comp?.label);
+    if (matches.length < 2) return label;
+    return `${label} (${matches.findIndex((item) => item.id === comp.id) + 1} of ${matches.length})`;
+  }
+
   function renderLeftAreasPanel() {
     const listEl = document.getElementById("pageAreasList");
+    const previousScrollTop = listEl.scrollTop;
     const query = (document.getElementById("areaSearchInput").value || "").trim().toLowerCase();
     listEl.replaceChildren();
 
@@ -639,17 +649,31 @@
     }
 
     for (const [category, items] of groups.entries()) {
-      const header = document.createElement("div");
+      const group = document.createElement("details");
+      group.className = "area-group";
+      group.open = query ? true : (areaGroupOpenStates.get(category) ?? (category === "Whole Page" || items.some((comp) => comp.id === selectedCompId)));
+      const header = document.createElement("summary");
       header.className = "area-group-title";
-      header.textContent = category;
-      listEl.appendChild(header);
+      const groupName = document.createElement("span");
+      groupName.textContent = category;
+      const groupCount = document.createElement("span");
+      groupCount.className = "area-group-count";
+      groupCount.textContent = String(items.length);
+      header.append(groupName, groupCount);
+      const groupItems = document.createElement("div");
+      groupItems.className = "area-group-items";
+      group.append(header, groupItems);
+      group.addEventListener("toggle", () => {
+        if (!query) areaGroupOpenStates.set(category, group.open);
+      });
+      listEl.appendChild(group);
 
       for (const comp of items) {
         const row = document.createElement("button");
         row.type = "button";
         row.className = "area-row" + (comp.id === selectedCompId ? " selected" : "");
-        row.setAttribute("role", "option");
-        row.setAttribute("aria-selected", comp.id === selectedCompId ? "true" : "false");
+        row.dataset.compId = comp.id;
+        row.setAttribute("aria-current", comp.id === selectedCompId ? "true" : "false");
 
         const cfg = workingSiteConfig.components?.[comp.id];
         const count = cfg?.playlist?.length || (cfg?.activeMediaId ? 1 : 0);
@@ -667,7 +691,7 @@
         infoDiv.className = "area-info";
         const nameSpan = document.createElement("span");
         nameSpan.className = "area-name";
-        nameSpan.textContent = comp.label;
+        nameSpan.textContent = getComponentDisplayLabel(comp);
         const metaSpan = document.createElement("span");
         metaSpan.className = "area-meta";
         metaSpan.textContent = comp.dimensionsText || "";
@@ -678,11 +702,12 @@
         badgeSpan.textContent = badgeText;
 
         row.append(infoDiv, badgeSpan);
-        row.addEventListener("click", () => selectComponentArea(comp.id));
+        row.addEventListener("click", () => selectComponentArea(comp.id, "areas"));
         bindDropZoneEvents(row, comp);
-        listEl.appendChild(row);
+        groupItems.appendChild(row);
       }
     }
+    listEl.scrollTop = previousScrollTop;
   }
 
   function getComponentMapContext(comp) {
@@ -792,13 +817,14 @@
   function renderCenterLayoutMap() {
     const stage = document.getElementById("layoutMapCanvas");
     if (!stage) return;
+    const previousScrollTop = stage.scrollTop;
     stage.replaceChildren();
 
     const tree = inferLayoutMapTree(detectedComponents);
     const selectedComp = detectedComponents.find((comp) => comp.id === selectedCompId) || detectedComponents[0] || null;
     const selectedName = document.getElementById("mapSelectedAreaName");
     const assignedSummary = document.getElementById("mapAssignedMediaSummary");
-    if (selectedName) selectedName.textContent = selectedComp?.label || "No area selected";
+    if (selectedName) selectedName.textContent = selectedComp ? getComponentDisplayLabel(selectedComp) : "No area selected";
     if (assignedSummary) {
       const cfg = selectedComp ? workingSiteConfig.components?.[selectedComp.id] : null;
       const playlist = Array.isArray(cfg?.playlist) ? cfg.playlist : (cfg?.activeMediaId ? [cfg.activeMediaId] : []);
@@ -834,8 +860,8 @@
         row.setAttribute("role", "treeitem");
         row.setAttribute("aria-level", String(depth + 1));
         row.setAttribute("aria-selected", String(isSelected));
-        row.setAttribute("aria-label", `${comp.label}, ${comp.dimensionsText || "dimensions unknown"}`);
-        row.title = `${comp.label}${comp.dimensionsText ? ` · ${comp.dimensionsText}` : ""}`;
+        row.setAttribute("aria-label", `${getComponentDisplayLabel(comp)}, ${comp.dimensionsText || "dimensions unknown"}`);
+        row.title = `${getComponentDisplayLabel(comp)}${comp.dimensionsText ? ` · ${comp.dimensionsText}` : ""}`;
 
         const main = document.createElement("div");
         main.className = "map-tree-row-main";
@@ -848,7 +874,7 @@
         copy.className = "map-tree-copy";
         const title = document.createElement("span");
         title.className = "map-tree-title";
-        title.textContent = comp.label || "Page area";
+        title.textContent = getComponentDisplayLabel(comp);
         const meta = document.createElement("span");
         meta.className = "map-tree-meta";
         meta.textContent = [category, comp.dimensionsText].filter(Boolean).join(" · ");
@@ -970,7 +996,7 @@
     const outlineTitle = document.createElement("strong");
     outlineTitle.textContent = "Page outline";
     const outlineNote = document.createElement("span");
-    outlineNote.textContent = "Approximate page outline";
+    outlineNote.textContent = "Regions can overlap on long pages";
     outlineHeading.append(outlineTitle, outlineNote);
     const frame = document.createElement("div");
     frame.className = "map-schematic-frame";
@@ -988,36 +1014,57 @@
       .map((comp) => ({ comp, rect: getComponentMapRect(comp) }))
       .filter(({ rect }) => [rect.x, rect.y, rect.w, rect.h].every(Number.isFinite) && rect.w > 0 && rect.h > 0)
       .sort((a, b) => (b.rect.w * b.rect.h) - (a.rect.w * a.rect.h));
-    const visibleRegions = regions.slice(0, 14);
-    const selectedRegion = regions.find(({ comp }) => comp.id === selectedCompId);
-    if (selectedRegion && !visibleRegions.includes(selectedRegion)) visibleRegions.push(selectedRegion);
-    for (const { comp, rect } of visibleRegions) {
-      const left = Math.max(0, Math.min(100, rect.x * 100));
-      const top = Math.max(0, Math.min(100, rect.y * 100));
-      const width = Math.min(100 - left, rect.w * 100);
-      const height = Math.min(100 - top, rect.h * 100);
-      if (width < 1 || height < 1) continue;
-      const region = document.createElement("button");
-      region.type = "button";
-      region.className = `map-schematic-region${comp.id === selectedCompId ? " selected" : ""}`;
-      region.style.left = `${left}%`;
-      region.style.top = `${top}%`;
-      region.style.width = `${width}%`;
-      region.style.height = `${height}%`;
-      region.textContent = width > 13 && height > 4 ? comp.label : "";
-      region.title = comp.label;
-      region.setAttribute("aria-label", `Select ${comp.label}`);
-      region.addEventListener("click", () => selectComponentArea(comp.id));
-      bindDropZoneEvents(region, comp);
-      frame.appendChild(region);
+    const hasOversizedRegions = regions.some(({ rect }) => rect.w > 1.2 || rect.h > 1.2 || rect.x < -0.2 || rect.y < -0.2);
+    const hasConflictingRegions = regions.some(({ rect: a }, index) => regions.slice(index + 1).some(({ rect: b }) => {
+      const overlapW = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+      const overlapH = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+      const areaA = a.w * a.h;
+      const areaB = b.w * b.h;
+      return overlapW * overlapH > Math.min(areaA, areaB) * 0.85 && Math.min(areaA, areaB) > Math.max(areaA, areaB) * 0.6;
+    }));
+    const outlineUnavailable = hasOversizedRegions || hasConflictingRegions || regions.length > 14;
+    if (!outlineUnavailable) {
+      const visibleRegions = regions.slice(0, 14);
+      const selectedRegion = regions.find(({ comp }) => comp.id === selectedCompId);
+      if (selectedRegion && !visibleRegions.includes(selectedRegion)) visibleRegions.push(selectedRegion);
+      for (const { comp, rect } of visibleRegions) {
+        const left = Math.max(0, Math.min(100, rect.x * 100));
+        const top = Math.max(0, Math.min(100, rect.y * 100));
+        const width = Math.min(100 - left, rect.w * 100);
+        const height = Math.min(100 - top, rect.h * 100);
+        if (width < 1 || height < 1) continue;
+        const region = document.createElement("button");
+        region.type = "button";
+        region.className = `map-schematic-region${comp.id === selectedCompId ? " selected" : ""}`;
+        region.style.left = `${left}%`;
+        region.style.top = `${top}%`;
+        region.style.width = `${width}%`;
+        region.style.height = `${height}%`;
+        region.textContent = width > 13 && height > 4 ? getComponentDisplayLabel(comp) : "";
+        region.title = getComponentDisplayLabel(comp);
+        region.setAttribute("aria-label", `Select ${getComponentDisplayLabel(comp)}`);
+        region.addEventListener("click", () => selectComponentArea(comp.id));
+        bindDropZoneEvents(region, comp);
+        frame.appendChild(region);
+      }
+      outline.append(outlineHeading, frame);
     }
-    outline.append(outlineHeading, frame);
-    const hierarchy = document.createElement("details");
-    hierarchy.className = "map-hierarchy";
-    const hierarchyToggle = document.createElement("summary");
-    hierarchyToggle.textContent = "Browse page hierarchy";
-    hierarchy.append(hierarchyToggle, treeRoot);
-    stage.append(outline, hierarchy);
+    if (outlineUnavailable) {
+      const note = document.createElement("p");
+      note.className = "map-outline-inline-note";
+      note.textContent = "Position outline hidden: this page has overlapping or very long regions. Use the hierarchy for exact selection.";
+      stage.append(treeRoot, note);
+    } else {
+      const outlineDisclosure = document.createElement("details");
+      outlineDisclosure.className = "map-outline-disclosure";
+      outlineDisclosure.open = mapOutlineOpen;
+      const outlineToggle = document.createElement("summary");
+      outlineToggle.textContent = "Show approximate page outline";
+      outlineDisclosure.append(outlineToggle, outline);
+      outlineDisclosure.addEventListener("toggle", () => { mapOutlineOpen = outlineDisclosure.open; });
+      stage.append(treeRoot, outlineDisclosure);
+    }
+    stage.scrollTop = previousScrollTop;
   }
 
   async function toggleComponentVideoAction(comp, action) {
@@ -1063,7 +1110,7 @@
     const comp = detectedComponents.find((c) => c.id === selectedCompId) || detectedComponents[0];
     if (!comp) return;
 
-    document.getElementById("inspectorAreaName").textContent = comp.label;
+    document.getElementById("inspectorAreaName").textContent = getComponentDisplayLabel(comp);
     const suit = comp.suitability || { suitable: true, badgeText: "Suitable", reason: "" };
     document.getElementById("inspectorSuitabilityBadge").textContent = suit.badgeText || "Suitable";
     document.getElementById("inspectorSuitabilityReason").textContent = comp.matchReason || suit.reason || "";
@@ -1481,13 +1528,27 @@
     return workingSiteConfig.components[comp.id];
   }
 
-  function selectComponentArea(compId) {
+  function selectComponentArea(compId, source = "map") {
     selectedCompId = compId;
-    setEditorSidebarView("appearance");
+    const selectedCategory = detectedComponents.find((comp) => comp.id === compId)?.category || "Content Region";
+    areaGroupOpenStates.set(selectedCategory, true);
+    if (source !== "areas") setEditorSidebarView("areas");
     if (targetTabId) {
       sendTabMessage(targetTabId, { type: "CHAMELEON_HIGHLIGHT_COMPONENT", compId });
     }
     renderAllPanels();
+    revealSelectedAreaRow();
+  }
+
+  function revealSelectedAreaRow() {
+    const list = document.getElementById("pageAreasList");
+    if (!list || document.getElementById("editorPanelAreas").hidden) return;
+    const row = Array.from(list.querySelectorAll(".area-row")).find((item) => item.dataset.compId === selectedCompId);
+    if (!row) return;
+    const listRect = list.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < listRect.top) list.scrollTop -= listRect.top - rowRect.top + 8;
+    else if (rowRect.bottom > listRect.bottom) list.scrollTop += rowRect.bottom - listRect.bottom + 8;
   }
 
   function setEditorSidebarView(view, focus = false) {
@@ -1501,6 +1562,7 @@
       tab.tabIndex = active ? 0 : -1;
       if (focus && active) tab.focus();
     }
+    if (!appearanceActive) requestAnimationFrame(revealSelectedAreaRow);
   }
 
   function assignMediaToComponentInStudio(comp, mediaId) {
@@ -2773,8 +2835,33 @@
       });
 
     document.getElementById("btnRefreshDomScan").addEventListener("click", async () => {
-      await syncWithTargetTab();
-      renderAllPanels();
+      const button = document.getElementById("btnRefreshDomScan");
+      const feedback = document.getElementById("scanFeedback");
+      const previousIds = new Set(detectedComponents.map((comp) => comp.id));
+      button.disabled = true;
+      button.textContent = "Scanning…";
+      feedback.hidden = false;
+      feedback.textContent = "Checking page areas…";
+      try {
+        await syncWithTargetTab();
+        if (!detectedComponents.some((comp) => comp.id === selectedCompId)) {
+          selectedCompId = detectedComponents.find((comp) => comp.id === "root_page")?.id || detectedComponents[0]?.id || "root_page";
+        }
+        renderAllPanels();
+        const currentIds = new Set(detectedComponents.map((comp) => comp.id));
+        const added = [...currentIds].filter((id) => !previousIds.has(id)).length;
+        const removed = [...previousIds].filter((id) => !currentIds.has(id)).length;
+        feedback.textContent = !targetTabId
+          ? `${detectedComponents.length} sample areas shown · connect a website for a live scan`
+          : document.getElementById("mapStateNotice").hidden
+            ? `${added || removed ? `Scan complete · ${added} new, ${removed} removed` : "No area changes"} · ${detectedComponents.length} total`
+            : "Scan needs attention · see the notice below";
+      } catch (err) {
+        feedback.textContent = `Scan failed · ${err?.message || "try again"}`;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Rescan";
+      }
     });
 
     document.getElementById("btnTriggerLivePicker").addEventListener("click", async () => {
@@ -3133,7 +3220,10 @@
             return;
           }
           selectedCompId = resolved.id;
+          areaGroupOpenStates.set(resolved.category || "Content Region", true);
+          setEditorSidebarView("areas");
           renderAllPanels();
+          revealSelectedAreaRow();
           // Make the selected component and its controls immediately visible after
           // confirmation. If this browser does not expose tabs.getCurrent, the page
           // selection still succeeds and the user can return to the existing studio tab.

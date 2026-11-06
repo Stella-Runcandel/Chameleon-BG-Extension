@@ -87,7 +87,7 @@
         />
       </div>
 
-      <div id="pageAreasList" class="areas-list" role="listbox" aria-label="Detected website components"></div>
+      <div id="pageAreasList" class="areas-list" role="region" aria-label="Detected website components"></div>
 
       <div class="panel-footer" style="display:flex;flex-direction:column;gap:8px;">
         <button type="button" class="btn btn-primary btn-block" id="btnSaveSiteAsTheme" title="Save this website's current background media, opacity, blur, and audio settings as a reusable theme you can apply to any website">
@@ -106,13 +106,14 @@
           <div>
             <h2 id="centerPanelHeading">Page structure</h2>
             <p class="representation-note">
-              Select an area or drop media onto the page outline. Browse the hierarchy for precise areas.
+              Choose an area in the hierarchy. Page Areas follows your selection.
             </p>
           </div>
-          <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the target webpage for newly loaded sections">
-            Rescan
-          </button>
+          <div class="scan-actions">
+            <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the target webpage for newly loaded sections">Rescan</button>
+          </div>
         </div>
+        <p id="scanFeedback" class="scan-feedback" role="status" aria-live="polite" hidden></p>
 
         <div id="mapStateNotice" class="map-state-notice" hidden></div>
 
