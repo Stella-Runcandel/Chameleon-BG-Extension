@@ -1,14 +1,23 @@
 # ChameleonBG
 
-**Add custom images, animated GIFs, sanitized SVGs, or looping video wallpapers to any website—or just specific sections of a page.**
+**Add custom images, animated GIFs, sanitized SVGs, or looping video wallpapers to any website or specific sections of a page.**
 
 [![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-v2.5.0-FF7139?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/chameleonbg-custom-backgrounds/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Privacy: Local Only](https://img.shields.io/badge/Privacy-100%25%20Local%20Only-16a34a.svg)](PRIVACY.md)
 
-ChameleonBG is a privacy-first browser extension with a full Visual Studio for personalizing websites. Everything stays locally in your browser—no accounts, no analytics, no uploads.
+ChameleonBG is a privacy-first browser extension with a full Visual Studio for personalizing websites. Everything stays locally in your browser with no accounts, no analytics, and no uploads.
 
-![Before and after: ChameleonBG adding a custom background while keeping content readable](docs/screenshots/01-before-after.png)
+![Before and after: custom wallpaper with Frosted Glass Cards](docs/amo-screenshots-2.5.0/01-hero-before-after.png)
+
+## Screenshots
+
+| View | Preview |
+| --- | --- |
+| **Per-Site Themes** | ![Per-site custom backgrounds](docs/amo-screenshots-2.5.0/02-works-everywhere.png) |
+| **Visual Editor** | ![Visual Editor with Quick Looks](docs/amo-screenshots-2.5.0/03-visual-editor-quick-looks.png) |
+| **Media Library** | ![Local Media Library with Icons and List views](docs/amo-screenshots-2.5.0/04-media-library-icons-list.png) |
+| **Live Preview** | ![Live Preview and framing controls](docs/amo-screenshots-2.5.0/05-preview-framing-privacy.png) |
 
 ---
 
