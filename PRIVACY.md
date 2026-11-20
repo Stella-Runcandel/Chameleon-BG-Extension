@@ -1,43 +1,44 @@
-# ChameleonBG privacy and site access
+# ChameleonBG Privacy Policy
 
-Effective November 6, 2026.
+**Effective Date:** November 21, 2026
 
-ChameleonBG lets you place images and videos you choose behind website pages or
-regions. The extension does not have a developer server, analytics, or an
-account system. It does not send your imported media or site configurations to
-the developer. Those items are saved in Firefox extension storage and
-extension-owned IndexedDB on your device. An export goes to a file you choose.
+## Short Version
+**ChameleonBG collects zero data.** There is no developer server, no analytics, no telemetry, and no user accounts. Every wallpaper, playlist, theme, and site preference you create stays strictly on your device inside your browser's local storage.
 
-On sites you enable, ChameleonBG reads page structure and element text needed
-to identify selectable regions, applies local visual changes, and may capture
-the visible tab to show a preview inside the Studio. Site settings are stored
-by origin. The extension does not read passwords or form values for this
-purpose. The website itself may observe changes made to its page.
+---
 
-The Ko-fi and Patreon buttons open those external services only when you click
-them. Those services have their own privacy practices; ChameleonBG does not
-send your extension data to them.
+## What Data Is Stored (Locally Only)
+- **Imported Media:** Images, GIFs, SVGs, and videos you import are stored locally in extension-owned **IndexedDB** (`ChameleonBG_ExtMediaDB`) on your device. They are never uploaded anywhere.
+- **Site Settings & Themes:** Per-site visual configurations, Domain Themes, and opt-in site access records are stored locally in **`chrome.storage.local`**.
+- **Preview Snapshots:** When you open Studio or pick an area on a page, ChameleonBG may capture a temporary screenshot of that visible tab to display inside Studio's **Preview** framing view. This snapshot is kept strictly in memory (up to 6 tabs), is never sent off-device, and clears when the extension restarts.
+- **Backups:** Exported backup files are saved only where you choose on your computer.
 
-## Permissions
+## What ChameleonBG Accesses on Enabled Sites
+ChameleonBG **never runs on a website until you explicitly enable that site** and grant browser host permission. On enabled sites only:
+- It inspects page layout structure to let you pick customizable regions and mount background layers cleanly behind page content.
+- It does **not** read passwords, form inputs, cookies, or private account data.
+- Note that websites themselves can observe visual/DOM changes made inside their page.
 
-- `storage`: keep settings and site access choices in Firefox.
-- `unlimitedStorage`: allow local media libraries beyond the small default
-  extension storage quota. Available device storage still limits uploads.
-- `activeTab`: work with the tab you choose, including a visible-tab preview.
-- `scripting`: insert the editor's scripts and styles on an enabled site.
-- `contextMenus`: show the **Choose area** page menu item.
-- `alarms`: schedule local background housekeeping and playlist updates.
-- Optional `http://*/*` and `https://*/*` host access: request access at runtime
-  for sites you choose to enable. ChameleonBG also records an exact-origin
-  consent choice and does not run on every page merely because a wildcard host
-  permission was granted.
+## Browser Permissions Explained
+| Permission | Why It Is Needed |
+| --- | --- |
+| `storage` | Save your site looks, Domain Themes, and opt-in access preferences locally. |
+| `unlimitedStorage` | Allow storing large local wallpaper/video libraries beyond the small default browser quota. |
+| `activeTab` | Interact with the active tab you choose, including capturing a local framing preview. |
+| `scripting` | Inject ChameleonBG's background renderer and element picker **only** on sites you explicitly enable. |
+| `contextMenus` | Provide the right-click **Choose area** shortcut on webpages. |
+| `alarms` | Schedule local playlist rotations and background housekeeping. |
+| Optional `http://*/*` & `https://*/*` | Requested **at runtime** only when you explicitly turn ChameleonBG on for a website. Even if a broad host permission exists, ChameleonBG still enforces an exact-origin opt-in check before running. |
 
-You can pause the extension, disable or revoke a site's access, delete site
-settings, delete imported media, or clear all ChameleonBG data in the Studio.
-Uninstalling the add-on normally removes its browser-managed storage. Export a
-backup first if you want to keep your settings and media.
+## External Links
+Optional support links (**Ko-fi** and **Patreon**) in Settings only open those websites if you click them. ChameleonBG never sends any data to external services.
 
-Use media you have the right to use and review a website's rules before
-customizing it. ChameleonBG does not grant rights to third-party content or
-guarantee that a website will permit visual-modification extensions. The
-software license and its warranty disclaimer are in `LICENSE`.
+## Your Controls & Data Deletion
+You are always in full control of your data:
+- Pause ChameleonBG globally or per website at any time.
+- Remove a website's browser permission via **Remove Access** in the popup or in Firefox Add-ons settings.
+- Delete individual wallpapers, reset a single website, or wipe everything in **Settings → Privacy & Data → Clear All Data**.
+- Uninstalling ChameleonBG removes its browser-managed local storage.
+
+## Questions or Security Reports
+If you have privacy questions or want to report a security issue, please open an issue at [GitHub Issues](https://github.com/Stella-Runcandel/Chameleon-BG-Extension/issues).
