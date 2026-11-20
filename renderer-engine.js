@@ -1370,16 +1370,22 @@
 
       if (layer.targetEl) {
         const textContrastMode = String(cfg.textContrastMode || "none");
-        if (textContrastMode === "auto-shadow") {
-          setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(0, 0, 0, 0.88), 0 0 10px rgba(0, 0, 0, 0.55)", "important", layer.compId);
-        } else if (textContrastMode === "light-halo") {
-          setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(255, 255, 255, 0.92), 0 0 10px rgba(255, 255, 255, 0.65)", "important", layer.compId);
-        } else if (textContrastMode === "force-light") {
-          setRecordedInlineStyle(layer.targetEl, "color", "#f8fafc", "important", layer.compId);
-          setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(0, 0, 0, 0.92), 0 0 12px rgba(0, 0, 0, 0.65)", "important", layer.compId);
-        } else {
-          // Restore only text-shadow/color if previously set while keeping layout styles intact
+        if (textContrastMode === "dynamic-invert") {
+          layer.targetEl.setAttribute("data-chameleon-text-contrast", "dynamic-invert");
           setRecordedInlineStyle(layer.targetEl, "text-shadow", "", "", layer.compId);
+        } else {
+          layer.targetEl.removeAttribute("data-chameleon-text-contrast");
+          if (textContrastMode === "auto-shadow") {
+            setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(0, 0, 0, 0.88), 0 0 10px rgba(0, 0, 0, 0.55)", "important", layer.compId);
+          } else if (textContrastMode === "light-halo") {
+            setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(255, 255, 255, 0.92), 0 0 10px rgba(255, 255, 255, 0.65)", "important", layer.compId);
+          } else if (textContrastMode === "force-light") {
+            setRecordedInlineStyle(layer.targetEl, "color", "#f8fafc", "important", layer.compId);
+            setRecordedInlineStyle(layer.targetEl, "text-shadow", "0 1px 4px rgba(0, 0, 0, 0.92), 0 0 12px rgba(0, 0, 0, 0.65)", "important", layer.compId);
+          } else {
+            // Restore only text-shadow/color if previously set while keeping layout styles intact
+            setRecordedInlineStyle(layer.targetEl, "text-shadow", "", "", layer.compId);
+          }
         }
       }
     }
@@ -1421,6 +1427,7 @@
         if (sharedResizeObserver) {
           try { sharedResizeObserver.unobserve(layer.targetEl); } catch (_) {}
         }
+        layer.targetEl.removeAttribute("data-chameleon-text-contrast");
         restoreElementInlineStyles(layer.targetEl, compId);
       }
 

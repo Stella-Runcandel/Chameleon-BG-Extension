@@ -77,7 +77,7 @@
   let detectedComponents = [];
   let frameNotices = [];
   let selectedCompId = "root_page";
-  let editorSideView = "areas";
+  let editorSideView = "appearance";
   const areaGroupOpenStates = new Map();
   let mapOutlineOpen = false;
   let mediaItems = [];
@@ -545,14 +545,14 @@
     });
   }
 
-  async function capturePreviewSnapshot() {
+  async function capturePreviewSnapshot({ forceRefresh = false } = {}) {
     const revision = ++previewCaptureRevision;
     const status = document.getElementById("previewSnapshotStatus");
     if (!targetTabId || !chrome.tabs?.captureVisibleTab) {
       status.textContent = "Website capture is unavailable. You can still preview and frame the assigned background.";
       return;
     }
-    status.textContent = "Capturing the selected website…";
+    status.textContent = "Loading website preview…";
     let originalTabId = null;
     let windowId = null;
     try {
@@ -563,22 +563,6 @@
       windowId = tab.windowId;
       const bounds = await sendTabMessage(targetTabId, { type: "CHAMELEON_GET_PREVIEW_BOUNDS", compId: selectedCompId });
       if (!bounds.ok || !bounds.viewport) throw new Error("The selected website is not ready for preview.");
-      const active = await callTabApi("query", { active: true, windowId });
-      originalTabId = active?.[0]?.id ?? null;
-      if (originalTabId !== targetTabId) await callTabApi("update", targetTabId, { active: true });
-      const check = await callTabApi("query", { active: true, windowId });
-      if (check?.[0]?.id !== targetTabId) throw new Error("Could not activate the selected website tab.");
-      const dataUrl = await callTabApi("captureVisibleTab", windowId, { format: "jpeg", quality: 80 });
-      const capturedTab = await callTabApi("query", { active: true, windowId });
-      const capturedTarget = capturedTab?.[0]?.id === targetTabId ? await callTabApi("get", targetTabId) : null;
-      if (!capturedTarget || normalizeOrigin(capturedTarget.url || "") !== normalizeOrigin(targetSiteKey)) {
-        throw new Error("The active tab changed during capture. Try refreshing again.");
-      }
-      if (revision !== previewCaptureRevision || currentView !== "preview") return;
-      if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) throw new Error("The website image was unavailable.");
-      const image = document.getElementById("previewSnapshotImage");
-      image.src = dataUrl;
-      image.hidden = false;
       const width = Number(bounds.viewport.width);
       const height = Number(bounds.viewport.height);
       document.getElementById("mediaFramingStage").style.aspectRatio = `${width} / ${height}`;
@@ -590,9 +574,65 @@
         region.style.width = `${rect.width}%`;
         region.style.height = `${rect.height}%`;
         region.hidden = false;
-        status.textContent = "Website snapshot refreshed. This is a framing guide; refresh after the page moves. Changes also update the real tab.";
       } else {
         region.hidden = true;
+      }
+
+      let dataUrl = null;
+      let usedCached = false;
+      // 1. Prefer the snapshot silently captured when opening Studio or picking an area (zero tab flash!).
+      if (!forceRefresh) {
+        const cached = await sendRuntimeMessage({
+          type: "CHAMELEON_GET_CACHED_PREVIEW_SNAPSHOT",
+          tabId: targetTabId,
+          siteKey: normalizeOrigin(targetSiteKey)
+        });
+        if (cached && cached.found && typeof cached.dataUrl === "string" && cached.dataUrl.startsWith("data:image/")) {
+          dataUrl = cached.dataUrl;
+          usedCached = true;
+        }
+      }
+      // 2. Try Firefox native background captureTab if available.
+      if (!dataUrl) {
+        const firefoxTabsApi = typeof browser !== "undefined" ? browser.tabs : null;
+        if (firefoxTabsApi && typeof firefoxTabsApi.captureTab === "function") {
+          try {
+            dataUrl = await firefoxTabsApi.captureTab(targetTabId, { format: "jpeg", quality: 82 });
+          } catch (_) {
+            dataUrl = null;
+          }
+        }
+      }
+      // 3. Fallback to captureVisibleTab (and cache it so future visits never flash).
+      if (!dataUrl) {
+        const active = await callTabApi("query", { active: true, windowId });
+        originalTabId = active?.[0]?.id ?? null;
+        if (originalTabId !== targetTabId) await callTabApi("update", targetTabId, { active: true });
+        const check = await callTabApi("query", { active: true, windowId });
+        if (check?.[0]?.id !== targetTabId) throw new Error("Could not activate the selected website tab.");
+        dataUrl = await callTabApi("captureVisibleTab", windowId, { format: "jpeg", quality: 80 });
+        const capturedTab = await callTabApi("query", { active: true, windowId });
+        const capturedTarget = capturedTab?.[0]?.id === targetTabId ? await callTabApi("get", targetTabId) : null;
+        if (!capturedTarget || normalizeOrigin(capturedTarget.url || "") !== normalizeOrigin(targetSiteKey)) {
+          throw new Error("The active tab changed during capture. Try refreshing again.");
+        }
+      }
+      if (revision !== previewCaptureRevision || currentView !== "preview") return;
+      if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) throw new Error("The website image was unavailable.");
+      if (!usedCached) {
+        sendRuntimeMessage({
+          type: "CHAMELEON_SET_CACHED_PREVIEW_SNAPSHOT",
+          tabId: targetTabId,
+          siteKey: normalizeOrigin(targetSiteKey),
+          dataUrl
+        }).catch(() => {});
+      }
+      const image = document.getElementById("previewSnapshotImage");
+      image.src = dataUrl;
+      image.hidden = false;
+      if (rect) {
+        status.textContent = "Website preview ready. Framing changes update the live tab automatically.";
+      } else {
         status.textContent = "The selected area is outside the visible page. Scroll it into view and refresh the snapshot.";
       }
     } catch (error) {
@@ -636,11 +676,19 @@
     }
     if (btnDiscard) {
       btnDiscard.disabled = !unsaved;
-      btnDiscard.hidden = studioAutoSaveEnabled && !unsaved;
+      btnDiscard.hidden = studioAutoSaveEnabled;
     }
     if (btnSave) {
       btnSave.disabled = !unsaved;
-      btnSave.hidden = studioAutoSaveEnabled && !unsaved;
+      btnSave.hidden = studioAutoSaveEnabled;
+    }
+    const btnPauseVideos = document.getElementById("btnPauseBackgroundVideos");
+    if (btnPauseVideos && currentView === "editor") {
+      const anyVideoAssigned = Object.values(workingSiteConfig.components || {}).some((c) => {
+        const ids = Array.isArray(c?.playlist) ? c.playlist : (c?.activeMediaId ? [c.activeMediaId] : []);
+        return ids.some((id) => allMediaItems.find((m) => m.id === id)?.mediaType === "video");
+      });
+      btnPauseVideos.hidden = !anyVideoAssigned && !globalSettings.pauseAllBackgroundVideos;
     }
   }
 
@@ -1148,10 +1196,18 @@
     playlistContainer.replaceChildren();
 
     if (playlist.length === 0) {
+      const emptyWrap = document.createElement("div");
+      emptyWrap.className = "playlist-empty-cta";
       const emptyP = document.createElement("p");
       emptyP.className = "playlist-empty-note";
-      emptyP.textContent = `Drag or click a media item from the library to assign it to ${comp.label}.`;
-      playlistContainer.appendChild(emptyP);
+      emptyP.textContent = `No wallpaper on ${comp.label} yet.`;
+      const chooseBtn = document.createElement("button");
+      chooseBtn.type = "button";
+      chooseBtn.className = "btn btn-primary btn-sm btn-block";
+      chooseBtn.textContent = "+ Choose Wallpaper";
+      chooseBtn.addEventListener("click", () => openEditorMediaPicker());
+      emptyWrap.append(emptyP, chooseBtn);
+      playlistContainer.appendChild(emptyWrap);
     } else {
       playlist.forEach((mediaId, idx) => {
         const meta = allMediaItems.find((m) => m.id === mediaId);
@@ -1183,6 +1239,10 @@
       });
     }
 
+    const playlistRotationControls = document.getElementById("playlistRotationControls");
+    if (playlistRotationControls) {
+      playlistRotationControls.hidden = playlist.length < 2;
+    }
     const rotationSelect = document.getElementById("selectRotationInterval");
     const rotationSeconds = Number(cfg.rotationIntervalSec ?? 0);
     const builtInIntervals = new Set([0, 15, 60, 300, 1800, -1]);
@@ -1234,7 +1294,7 @@
       ? "The interval is the minimum time before a switch. If this clip is still playing when the interval expires, the next item waits until it ends."
       : "Applies when the active playlist item is a video. Images continue to rotate on the selected interval.";
     const audioHelp = document.getElementById("videoAudioHelp");
-    if (audioHelp) audioHelp.textContent = "Pause/Play and Mute/Unmute are available beside the active video in the layout map. Videos start muted. Audio preference is saved per exact origin in this build; browser autoplay rules still apply.";
+    if (audioHelp) audioHelp.textContent = "Use Pause or Unmute beside the video on the left.";
 
     document.getElementById("sliderOpacity").value = cfg.opacity ?? 85;
     document.getElementById("valOpacity").textContent = `${cfg.opacity ?? 85}%`;
@@ -1556,7 +1616,7 @@
     selectedCompId = compId;
     const selectedCategory = detectedComponents.find((comp) => comp.id === compId)?.category || "Content Region";
     areaGroupOpenStates.set(selectedCategory, true);
-    if (source !== "areas") setEditorSidebarView("areas");
+    if (source === "areas") setEditorSidebarView("appearance");
     if (targetTabId) {
       sendTabMessage(targetTabId, { type: "CHAMELEON_HIGHLIGHT_COMPONENT", compId });
     }
@@ -1944,8 +2004,9 @@
     // Media Library made those screens look like a continuation of the editor.
     document.querySelectorAll("[data-editor-only=\"true\"]").forEach((el) => {
       const isDraftAction = el.id === "btnStudioDiscard" || el.id === "btnStudioSave";
-      el.hidden = currentView !== "editor" || (isDraftAction && studioAutoSaveEnabled && !hasUnsavedPreviewChanges());
+      el.hidden = currentView !== "editor" || (isDraftAction && studioAutoSaveEnabled);
     });
+    if (currentView === "editor") updateTopbarDraftControls();
     document.title = currentView === "library"
       ? "ChameleonBG — Media Library"
       : currentView === "preview"
@@ -1962,7 +2023,7 @@
     }
     if (currentView === "preview" && previousView !== "preview" && studioReady) {
       renderMediaFramingPreview();
-      capturePreviewSnapshot();
+      capturePreviewSnapshot({ forceRefresh: false });
     }
   }
 
@@ -2490,6 +2551,7 @@
       targetSiteKey = nextKey;
       targetHostname = ChameleonStorageService.deriveSiteIdentity(targetSiteKey).hostname;
       undoStack.length = 0;
+      redoStack.length = 0;
       selectedCompId = "root_page";
       const overview = await sendRuntimeMessage({ type: "CHAMELEON_GET_OVERVIEW", siteKey: targetSiteKey, hostname: targetHostname });
       if (overview && overview.ok) {
@@ -2764,7 +2826,7 @@
       switchStudioView("editor");
       openEditorMediaPicker();
     });
-    document.getElementById("btnRefreshPreviewSnapshot")?.addEventListener("click", capturePreviewSnapshot);
+    document.getElementById("btnRefreshPreviewSnapshot")?.addEventListener("click", () => capturePreviewSnapshot({ forceRefresh: true }));
     document.getElementById("previewMediaSelect")?.addEventListener("change", (event) => {
       previewSelectedMediaId = event.target.value || null;
       renderMediaFramingPreview();
@@ -3167,11 +3229,58 @@
     });
 
     document.getElementById("inputTintColor").addEventListener("input", (e) => {
+      pushUndoState();
       const comp = detectedComponents.find((c) => c.id === selectedCompId) || detectedComponents[0];
       const cfg = ensureComponentInWorkingConfig(comp);
       cfg.tintColor = e.target.value;
       pushLivePreviewToTab(false);
     });
+
+    const MEDIA_VIEW_STORAGE_KEY = "chameleon_media_view_mode";
+    function applyMediaViewMode(mode) {
+      const normalized = mode === "list" ? "list" : "grid";
+      const isList = normalized === "list";
+      const pickerGrid = document.getElementById("studioMediaGrid");
+      const libraryGrid = document.getElementById("libraryFullGrid");
+      if (pickerGrid) pickerGrid.classList.toggle("media-view-list", isList);
+      if (libraryGrid) libraryGrid.classList.toggle("media-view-list", isList);
+      document.querySelectorAll(".view-toggle-btn[data-media-view]").forEach((btn) => {
+        const active = btn.dataset.mediaView === normalized;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-pressed", String(active));
+      });
+      try { localStorage.setItem(MEDIA_VIEW_STORAGE_KEY, normalized); } catch (_) {}
+    }
+    let savedMediaView = "grid";
+    try { savedMediaView = localStorage.getItem(MEDIA_VIEW_STORAGE_KEY) || "grid"; } catch (_) {}
+    applyMediaViewMode(savedMediaView);
+    document.querySelectorAll(".view-toggle-btn[data-media-view]").forEach((btn) => {
+      btn.addEventListener("click", () => applyMediaViewMode(btn.dataset.mediaView));
+    });
+
+    const QUICK_LOOKS = {
+      "clear": { opacity: 85, tintOpacity: 10, backdropBlurPx: 0, blur: 0, textContrastMode: "none", softenOpaqueWrappers: true },
+      "easy-read": { opacity: 88, tintOpacity: 32, backdropBlurPx: 8, blur: 2, textContrastMode: "light-halo", softenOpaqueWrappers: true },
+      "frosted": { opacity: 92, tintOpacity: 22, backdropBlurPx: 14, blur: 4, textContrastMode: "auto-shadow", softenOpaqueWrappers: true },
+      "dark-cozy": { opacity: 82, tintOpacity: 55, backdropBlurPx: 6, blur: 2, textContrastMode: "force-light", tintColor: "#0f172a", softenOpaqueWrappers: true }
+    };
+    const quickLooksRow = document.getElementById("quickLooksRow");
+    if (quickLooksRow) {
+      quickLooksRow.addEventListener("click", (e) => {
+        const btn = e.target.closest(".quick-look-btn[data-look]");
+        if (!btn) return;
+        const preset = QUICK_LOOKS[btn.dataset.look];
+        if (!preset) return;
+        const comp = detectedComponents.find((c) => c.id === selectedCompId) || detectedComponents[0];
+        if (!comp) return;
+        pushUndoState();
+        const cfg = ensureComponentInWorkingConfig(comp);
+        Object.assign(cfg, preset);
+        quickLooksRow.querySelectorAll(".quick-look-btn").forEach((b) => b.classList.toggle("active", b === btn));
+        renderRightInspectorPanel();
+        pushLivePreviewToTab(false);
+      });
+    }
 
     document.getElementById("selectRenderMode").addEventListener("change", (e) => {
       pushUndoState();

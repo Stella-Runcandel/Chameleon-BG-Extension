@@ -52,3 +52,16 @@
   border: none !important;
   transition: background-color 0.2s ease !important;
 }
+
+/* Experimental: Dynamic pixel-level contrasting text (Windows inverted cursor style).
+   White text with mix-blend-mode: difference turns dark over bright wallpaper/video
+   regions and bright over dark regions in real time without polling. */
+[data-chameleon-text-contrast="dynamic-invert"] :is(h1, h2, h3, h4, h5, h6, p, a, span, li, label, dt, dd, blockquote, td, th, strong, em, small, code):not([data-chameleon-owned="true"]):not([data-chameleon-owned="true"] *) {
+  color: #ffffff !important;
+  mix-blend-mode: difference !important;
+  text-shadow: none !important;
+}
+
+[data-chameleon-text-contrast="dynamic-invert"] :is(img, video, canvas, picture, iframe, svg, input, select, textarea):not([data-chameleon-owned="true"]) {
+  mix-blend-mode: normal !important;
+}

@@ -112,8 +112,8 @@
       return {
         suitable: true,
         recommendedMode: isInsideFrame ? "mode-b" : "mode-a",
-        badgeText: isInsideFrame ? "Suitable • Frame Body Layer" : "Suitable • Whole-Page Backdrop",
-        reason: isInsideFrame ? "Same-origin iframe body layer." : "Full-viewport backdrop layer."
+        badgeText: isInsideFrame ? "Ready • Inner Page" : "Ready • Whole Website",
+        reason: isInsideFrame ? "Covers the background of this embedded page." : "Covers the whole background behind the website."
       };
     }
 
@@ -124,15 +124,15 @@
         return {
           suitable: false,
           recommendedMode: "none",
-          badgeText: "Unsupported Frame • Security Boundary",
-          reason: frameCheck.reason
+          badgeText: "Protected Box",
+          reason: "This embedded box is protected by the browser and can't be customized."
         };
       }
       return {
         suitable: false,
         recommendedMode: "none",
-        badgeText: "Same-Origin Frame Container • Select Inner Region",
-        reason: "Move pointer inside this same-origin frame to select a specific section, or select its parent wrapper."
+        badgeText: "Move inside to pick an area",
+        reason: "Move your cursor inside this box to pick a section, or pick the box around it."
       };
     }
 
@@ -140,8 +140,8 @@
       return {
         suitable: false,
         recommendedMode: "none",
-        badgeText: "Not Suitable • Interactive or Media Control",
-        reason: `<${tag.toLowerCase()}> is a replaced or interactive control that cannot host a background layer.`
+        badgeText: "Can't put wallpaper here",
+        reason: "Buttons, pictures, and videos can't hold a background. Try a larger section around it."
       };
     }
 
@@ -150,8 +150,8 @@
       return {
         suitable: false,
         recommendedMode: "none",
-        badgeText: "Too Small (< 48×32 px)",
-        reason: "Element is too small to display a meaningful background."
+        badgeText: "Too small",
+        reason: "This spot is too tiny for a wallpaper. Try a larger section around it."
       };
     }
 
@@ -160,10 +160,10 @@
       return {
         suitable: false,
         recommendedMode: "none",
-        badgeText: computed.display === "inline" ? "Not Suitable • Inline Text Span" : "Hidden Element",
+        badgeText: computed.display === "inline" ? "Text only" : "Hidden area",
         reason: computed.display === "inline"
-          ? "Inline elements cannot host block background layers safely; select its parent container."
-          : "Element is not currently visible."
+          ? "Single words can't hold a wallpaper. Pick the box around this text instead."
+          : "This area is currently hidden."
       };
     }
 
@@ -171,16 +171,16 @@
       return {
         suitable: true,
         recommendedMode: "mode-c",
-        badgeText: "Suitable • Direct Style Fallback (Mode C)",
-        reason: "Table or list structure uses controlled background styling to preserve child layout."
+        badgeText: "Ready • Basic Area (Pictures only)",
+        reason: "Works best with a static picture background."
       };
     }
 
     return {
       suitable: true,
       recommendedMode: "mode-b",
-      badgeText: "Suitable • Independent Layer (Mode B)",
-      reason: "Supports an isolated background layer behind its content."
+      badgeText: "Ready to customize",
+      reason: "Great spot for pictures, GIFs, or video wallpapers!"
     };
   }
 

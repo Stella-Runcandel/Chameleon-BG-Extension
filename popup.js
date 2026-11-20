@@ -77,19 +77,20 @@
     const currentHostname = capability.hostname || "local-page";
     const siteOrigin = capability.origin || currentSiteKey;
     const permissionPattern = capability.originPattern || null;
-    siteHostLabel.textContent = capability.supported ? siteOrigin : "Protected Browser Page";
+    const popupActiveControls = document.getElementById("popupActiveControls");
+    siteHostLabel.textContent = capability.supported ? currentHostname : "Browser Page";
     consentHostname.textContent = currentHostname;
-    consentOrigin.textContent = siteOrigin;
+    consentOrigin.textContent = currentHostname;
 
     if (!capability.supported) {
       unsupportedNotice.hidden = false;
-      unsupportedReasonText.textContent = capability.reason || "This page cannot be customized.";
+      unsupportedReasonText.textContent = "Browser pages like Settings or New Tab can't be customized. Visit any website to add a wallpaper!";
       siteEnableCheckbox.disabled = true;
       btnOpenVisualEditor.disabled = true;
       btnSelectOnPage.disabled = true;
       btnRevokeSiteAccess.hidden = true;
-      siteAccessStateText.textContent = capability.reason || "This browser page is unsupported.";
-      siteAccessStateText.dataset.state = "error";
+      siteAccessStateText.hidden = true;
+      if (popupActiveControls) popupActiveControls.hidden = true;
     }
 
     const overview = await sendMessage({
@@ -128,29 +129,31 @@
       btnSelectOnPage.disabled = !runtimeEnabled;
       btnRevokeSiteAccess.hidden = !(permissionGranted || capability.persistentHostPermissionPresent) || !capability.supported;
 
+      const needsFirstTimeEnable = capability.supported && extensionGloballyEnabled && (!permissionGranted || !consentAccepted);
+      if (popupActiveControls) {
+        popupActiveControls.hidden = !runtimeEnabled;
+      }
+
       if (!capability.supported) {
-        siteAccessStateText.textContent = "Unavailable on this browser page.";
-        siteAccessStateText.dataset.state = "error";
+        siteAccessStateText.hidden = true;
       } else if (!extensionGloballyEnabled) {
-        siteAccessStateText.textContent = "ChameleonBG is globally paused. Saved site settings are preserved.";
+        siteAccessStateText.hidden = false;
+        siteAccessStateText.textContent = "ChameleonBG is paused everywhere. Turn it back on in Settings.";
         siteAccessStateText.dataset.state = "off";
       } else if (runtimeEnabled) {
-        siteAccessStateText.textContent = "Enabled on this exact origin.";
+        siteAccessStateText.hidden = false;
+        siteAccessStateText.textContent = "On for this site";
         siteAccessStateText.dataset.state = "enabled";
       } else if (siteEnabled && capability.injectionError) {
-        siteAccessStateText.textContent = capability.injectionError;
+        siteAccessStateText.hidden = false;
+        siteAccessStateText.textContent = "Reload this tab to start customizing.";
         siteAccessStateText.dataset.state = "error";
-      } else if (!permissionGranted && capability.persistentHostPermissionPresent) {
-        siteAccessStateText.textContent = "Off · confirm site access in ChameleonBG before it can run here.";
-        siteAccessStateText.dataset.state = "off";
-      } else if (!permissionGranted) {
-        siteAccessStateText.textContent = "Off · persistent browser access has not been granted for this host.";
-        siteAccessStateText.dataset.state = "off";
-      } else if (!consentAccepted) {
-        siteAccessStateText.textContent = "Off · review the site-use warning before enabling.";
-        siteAccessStateText.dataset.state = "off";
+      } else if (needsFirstTimeEnable) {
+        siteAccessStateText.hidden = true;
+        consentPanel.hidden = false;
       } else {
-        siteAccessStateText.textContent = "Off · your saved settings and media are kept.";
+        siteAccessStateText.hidden = false;
+        siteAccessStateText.textContent = "Paused on this site — flip the switch above to turn it back on.";
         siteAccessStateText.dataset.state = "off";
       }
     }
@@ -330,13 +333,13 @@
     btnKeepSiteDisabled.addEventListener("click", () => {
       siteEnableCheckbox.checked = false;
       hideConsentPanel();
-      renderAccessState();
+      window.close();
     });
 
     btnRevokeSiteAccess.addEventListener("click", async () => {
-      if (!permissionGranted || !permissionPattern) return;
+      if (!(permissionGranted || capability.persistentHostPermissionPresent) || !permissionPattern) return;
       const agreed = window.confirm(
-        `Revoke ChameleonBG's browser access for ${siteOrigin}? This may affect access on the same host across ports. Your saved media and site settings will be kept.`
+        `Remove ChameleonBG's permission for ${currentHostname}? Your saved wallpapers and settings will be kept.`
       );
       if (!agreed) return;
       btnRevokeSiteAccess.disabled = true;
@@ -451,7 +454,14 @@
   async function renderSavedMediaStrip(container, mediaItems, activeTab, isTabSupported) {
     cleanupPreviewUrls();
     container.replaceChildren();
-    const topItems = mediaItems.slice(0, 4);
+    // Show user's own uploaded wallpapers first, then built-in presets
+    const sortedItems = [...(mediaItems || [])].sort((a, b) => {
+      const aPreset = a?.mediaType === "preset" ? 1 : 0;
+      const bPreset = b?.mediaType === "preset" ? 1 : 0;
+      if (aPreset !== bPreset) return aPreset - bPreset;
+      return (b?.createdAt || 0) - (a?.createdAt || 0);
+    });
+    const topItems = sortedItems.slice(0, 4);
 
     for (const item of topItems) {
       const btn = document.createElement("button");

@@ -394,3 +394,9 @@ input:focus-visible {
 .site-access-state[data-state="enabled"] { color: var(--status-enabled); }
 .site-access-state[data-state="error"] { color: var(--danger-text); }
 .site-access-state[data-state="off"] { color: var(--status-off); }
+.popup-active-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+[hidden] { display: none !important; }

@@ -70,13 +70,10 @@
 
   <!-- VIEW 1: VISUAL EDITOR -->
   <main id="viewEditor" class="studio-workspace">
-    <!-- LEFT PANEL: PAGE AREAS -->
-    <aside class="panel panel-left" id="editorPanelAreas" role="tabpanel" aria-labelledby="editorTabAreas">
+    <!-- LEFT PANEL: PAGE AREAS (Search & Site Actions) -->
+    <aside class="panel panel-left" id="editorPanelAreas" role="tabpanel" aria-labelledby="editorTabAreas" hidden>
       <div class="panel-header">
-        <h2 id="leftPanelHeading">Page Areas</h2>
-        <button type="button" class="btn btn-primary btn-sm" id="btnTriggerLivePicker" title="Switch to the target website tab and visually click any component">
-          Select on site
-        </button>
+        <h2 id="leftPanelHeading">All Page Areas</h2>
       </div>
 
       <div class="panel-toolbar">
@@ -84,7 +81,7 @@
           type="search"
           id="areaSearchInput"
           class="input-field"
-          placeholder="Filter page areas..."
+          placeholder="Search page areas..."
           aria-label="Filter detected page areas"
         />
       </div>
@@ -92,10 +89,10 @@
       <div id="pageAreasList" class="areas-list" role="region" aria-label="Detected website components"></div>
 
       <div class="panel-footer" style="display:flex;flex-direction:column;gap:8px;">
-        <button type="button" class="btn btn-primary btn-block" id="btnSaveSiteAsTheme" title="Save this website's current background media, opacity, blur, and audio settings as a reusable theme you can apply to any website">
-          Save as theme
+        <button type="button" class="btn btn-block" id="btnSaveSiteAsTheme" title="Save this website's wallpaper and look so you can reuse it on other websites">
+          Save as reusable theme
         </button>
-        <button type="button" class="btn btn-danger-outline btn-block" id="btnResetEntireSite" title="Remove all customizations saved for this website">
+        <button type="button" class="btn btn-danger-outline btn-block" id="btnResetEntireSite" title="Remove all backgrounds saved for this website">
           Reset website
         </button>
       </div>
@@ -106,13 +103,14 @@
       <div class="center-map-section">
         <div class="panel-header">
           <div>
-            <h2 id="centerPanelHeading">Page structure</h2>
+            <h2 id="centerPanelHeading">1. Pick an area</h2>
             <p class="representation-note">
-              Choose an area in the hierarchy. Page Areas follows your selection.
+              Click the whole website or a section below, then choose your wallpaper.
             </p>
           </div>
           <div class="scan-actions">
-            <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the target webpage for newly loaded sections">Rescan</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnTriggerLivePicker" title="Jump to the website and click any part of the page">Pick on website</button>
+            <button type="button" class="btn btn-sm" id="btnRefreshDomScan" title="Re-scan the website for sections">Rescan</button>
           </div>
         </div>
         <p id="scanFeedback" class="scan-feedback" role="status" aria-live="polite" hidden></p>
@@ -125,21 +123,21 @@
           <div class="map-selection-summary">
             <span class="map-selection-kicker">SELECTED AREA</span>
             <strong id="mapSelectedAreaName">Entire Website</strong>
-            <span id="mapAssignedMediaSummary" class="map-assignment-meta">No background assigned</span>
+            <span id="mapAssignedMediaSummary" class="map-assignment-meta">No wallpaper yet</span>
           </div>
           <div class="map-assignment-actions">
-            <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose background</button>
-            <button type="button" class="btn" id="btnOpenSelectedAreaPreview">Preview result</button>
-            <button type="button" class="btn" id="btnOpenFullMediaLibrary">Open Media Library</button>
-            <button type="button" class="btn btn-danger-outline" id="btnResetSelectedArea" title="Remove customizations from the selected area and restore its original page styles">Reset area</button>
+            <button type="button" class="btn btn-primary" id="btnOpenEditorMediaPicker">Choose wallpaper</button>
+            <button type="button" class="btn" id="btnOpenSelectedAreaPreview">Preview &amp; crop</button>
+            <button type="button" class="btn" id="btnOpenFullMediaLibrary">Library</button>
+            <button type="button" class="btn btn-danger-outline" id="btnResetSelectedArea" title="Remove the wallpaper from this area">Reset</button>
           </div>
         </div>
       </div>
     </section>
 
     <div class="editor-side-tabs" role="tablist" aria-label="Editor sidebar">
-      <button type="button" id="editorTabAreas" class="editor-side-tab" role="tab" aria-controls="editorPanelAreas" aria-selected="true">Page Areas</button>
-      <button type="button" id="editorTabAppearance" class="editor-side-tab" role="tab" aria-controls="editorPanelAppearance" aria-selected="false" tabindex="-1">Appearance</button>
+      <button type="button" id="editorTabAppearance" class="editor-side-tab" role="tab" aria-controls="editorPanelAppearance" aria-selected="true">Customize</button>
+      <button type="button" id="editorTabAreas" class="editor-side-tab" role="tab" aria-controls="editorPanelAreas" aria-selected="false" tabindex="-1">All Areas</button>
     </div>
 
     <!-- On-demand media picker: keeps the editor canvas focused until media is needed. -->
@@ -147,16 +145,16 @@
       <div class="media-picker-shell">
         <div class="media-picker-header">
           <div>
-            <h2 id="editorMediaPickerHeading">Choose a background</h2>
-            <p class="secondary-sub">Select media for this page area. Imported files join the shared library; the assignment changes only when you click OK.</p>
+            <h2 id="editorMediaPickerHeading">Choose a wallpaper</h2>
+            <p class="secondary-sub">Pick a picture or video below, or import one from your computer.</p>
           </div>
-          <button type="button" class="btn btn-cancel-soft" id="btnCloseEditorMediaPicker" aria-label="Cancel background selection">Cancel</button>
+          <button type="button" class="btn btn-icon-close" id="btnCloseEditorMediaPicker" aria-label="Cancel background selection">✕</button>
         </div>
         <div class="media-picker-toolbar">
-          <input type="search" id="mediaSearchInput" class="input-field" placeholder="Search media…" aria-label="Search media library" />
+          <input type="search" id="mediaSearchInput" class="input-field" placeholder="Search wallpapers…" aria-label="Search media library" />
           <select id="mediaTypeFilter" class="select-field" aria-label="Filter by media type">
             <option value="all">All Types</option>
-            <option value="image">Images</option>
+            <option value="image">Pictures</option>
             <option value="video">Videos</option>
             <option value="preset">Presets</option>
           </select>
@@ -167,8 +165,12 @@
             <option value="size-desc">Size (Largest)</option>
             <option value="size-asc">Size (Smallest)</option>
           </select>
+          <div class="media-view-toggle" role="group" aria-label="Wallpaper view layout">
+            <button type="button" class="btn btn-sm view-toggle-btn active" data-media-view="grid" aria-pressed="true" title="Show large preview icons">Icons</button>
+            <button type="button" class="btn btn-sm view-toggle-btn" data-media-view="list" aria-pressed="false" title="Show compact file list">List</button>
+          </div>
           <label class="btn btn-primary upload-btn-label">
-            Import media
+            + Import from PC
             <input type="file" id="studioFileInput" accept="image/webp,image/avif,image/png,image/jpeg,image/gif,image/svg+xml,video/webm,video/mp4,video/ogg" multiple hidden />
           </label>
         </div>
@@ -178,224 +180,251 @@
         <div class="media-picker-footer">
           <div class="picker-selection-copy">
             <strong id="pickerSelectionCount">0 selected</strong>
-            <span id="pickerSelectionHelp">Choose one background.</span>
+            <span id="pickerSelectionHelp">Click any wallpaper to select it.</span>
           </div>
           <div class="picker-footer-actions">
-            <label class="picker-mode-control" for="pickerAssignmentMode">Assignment
+            <label class="picker-mode-control" for="pickerAssignmentMode">Mode
               <select id="pickerAssignmentMode" class="select-field">
-                <option value="single">Set one background</option>
-                <option value="playlist">Create/replace playlist</option>
+                <option value="single">Single wallpaper</option>
+                <option value="playlist">Slideshow / playlist</option>
               </select>
             </label>
             <button type="button" class="btn btn-cancel-soft" id="btnCancelEditorMediaPicker">Cancel</button>
-            <button type="button" class="btn btn-primary" id="btnConfirmEditorMediaPicker" disabled>OK · Use selected</button>
+            <button type="button" class="btn btn-primary" id="btnConfirmEditorMediaPicker" disabled>Apply wallpaper</button>
           </div>
         </div>
       </div>
     </dialog>
 
-    <!-- RIGHT PANEL: APPEARANCE & PLAYLIST INSPECTOR -->
-    <aside class="panel panel-right" id="editorPanelAppearance" role="tabpanel" aria-labelledby="editorTabAppearance" hidden>
+    <!-- RIGHT PANEL: APPEARANCE & PLAYLIST INSPECTOR (Open by default!) -->
+    <aside class="panel panel-right" id="editorPanelAppearance" role="tabpanel" aria-labelledby="editorTabAppearance">
       <div class="panel-header">
         <div>
-          <h2 id="rightPanelHeading">Appearance</h2>
+          <h2 id="rightPanelHeading">2. Customize look</h2>
           <p class="selected-area-subtitle" id="inspectorAreaName">Entire Website</p>
         </div>
       </div>
 
       <div class="inspector-scroll">
-        <div class="suitability-box" id="inspectorSuitabilityBox">
-          <span class="suit-label" id="inspectorSuitabilityBadge">Mode A • Whole-Page Backdrop</span>
-          <p class="suit-desc" id="inspectorSuitabilityReason">Uses a viewport-sized layer behind the document body.</p>
+        <div class="suitability-box" id="inspectorSuitabilityBox" hidden>
+          <span class="suit-label" id="inspectorSuitabilityBadge">Whole-Page Backdrop</span>
+          <p class="suit-desc" id="inspectorSuitabilityReason">Covers the full background behind the website.</p>
         </div>
 
         <!-- Playlist & Rotation Section -->
         <section class="inspector-group" aria-labelledby="playlistGroupHeading">
           <div class="group-header">
-            <h3 id="playlistGroupHeading">Assigned Media &amp; Playlist</h3>
+            <h3 id="playlistGroupHeading">Wallpaper</h3>
             <span class="count-tag" id="playlistCountTag">0 items</span>
           </div>
           <div id="assignedPlaylistContainer" class="playlist-items"></div>
 
-          <div class="control-field">
-            <label for="selectRotationInterval" title="Choose how often multiple backgrounds rotate on this component">
-              Rotation Interval
-            </label>
-            <select id="selectRotationInterval" class="select-field">
-              <option value="0">Static (Do not rotate)</option>
-              <option value="15">Every 15 seconds</option>
-              <option value="60">Every 1 minute</option>
-              <option value="300">Every 5 minutes</option>
-              <option value="1800">Every 30 minutes</option>
-              <option value="-1">On page refresh</option>
-              <option value="custom">Custom duration…</option>
-            </select>
-          </div>
-
-          <div id="customRotationControls" class="custom-rotation-controls" hidden>
-            <span class="control-help">Custom interval (hours : minutes : seconds)</span>
-            <div class="hms-inputs">
-              <label>Hours <input type="number" id="rotationHours" min="0" max="999" step="1" value="0" inputmode="numeric" /></label>
-              <span aria-hidden="true">:</span>
-              <label>Minutes <input type="number" id="rotationMinutes" min="0" max="59" step="1" value="5" inputmode="numeric" /></label>
-              <span aria-hidden="true">:</span>
-              <label>Seconds <input type="number" id="rotationSeconds" min="0" max="59" step="1" value="0" inputmode="numeric" /></label>
+          <div id="playlistRotationControls" class="playlist-rotation-controls" hidden>
+            <div class="control-field">
+              <label for="selectRotationInterval" title="Choose how often multiple wallpapers rotate">
+                Switch wallpaper every
+              </label>
+              <select id="selectRotationInterval" class="select-field">
+                <option value="0">Stay on one (Don't switch)</option>
+                <option value="15">Every 15 seconds</option>
+                <option value="60">Every 1 minute</option>
+                <option value="300">Every 5 minutes</option>
+                <option value="1800">Every 30 minutes</option>
+                <option value="-1">Every page refresh</option>
+                <option value="custom">Custom duration…</option>
+              </select>
             </div>
-            <p class="video-audio-note">Set all fields to zero to disable timed rotation.</p>
-          </div>
 
-          <label class="checkbox-field">
-            <input type="checkbox" id="chkShufflePlaylist" />
-            <span>Shuffle playlist order</span>
-          </label>
-          <label class="checkbox-field" id="waitForVideoEndField">
-            <input type="checkbox" id="chkWaitForVideoEnd" />
-            <span>For videos, wait until the clip ends before switching</span>
-          </label>
-          <p class="video-audio-note" id="waitForVideoEndHelp">The interval is the minimum time before a switch. If a video is still playing when the interval expires, the next item waits until that clip ends.</p>
+            <div id="customRotationControls" class="custom-rotation-controls" hidden>
+              <span class="control-help">Custom time (hours : minutes : seconds)</span>
+              <div class="hms-inputs">
+                <label>Hours <input type="number" id="rotationHours" min="0" max="999" step="1" value="0" inputmode="numeric" /></label>
+                <span aria-hidden="true">:</span>
+                <label>Minutes <input type="number" id="rotationMinutes" min="0" max="59" step="1" value="5" inputmode="numeric" /></label>
+                <span aria-hidden="true">:</span>
+                <label>Seconds <input type="number" id="rotationSeconds" min="0" max="59" step="1" value="0" inputmode="numeric" /></label>
+              </div>
+              <p class="video-audio-note">Set all fields to zero to stop switching automatically.</p>
+            </div>
+
+            <label class="checkbox-field">
+              <input type="checkbox" id="chkShufflePlaylist" />
+              <span>Shuffle order</span>
+            </label>
+            <label class="checkbox-field" id="waitForVideoEndField">
+              <input type="checkbox" id="chkWaitForVideoEnd" />
+              <span>Wait for video to finish before switching</span>
+            </label>
+            <p class="video-audio-note" id="waitForVideoEndHelp">If a video is still playing when the timer finishes, it will finish its loop first.</p>
+          </div>
         </section>
 
         <!-- Playback and mute are controlled directly from each assigned video row in the map. -->
         <section class="inspector-group video-playback-group" id="videoPlaybackGroup" aria-labelledby="videoPlaybackHeading" hidden>
           <div class="group-header">
-            <h3 id="videoPlaybackHeading">Video Audio &amp; Loop Trim</h3>
+            <h3 id="videoPlaybackHeading">Video Sound</h3>
             <span class="count-tag">Video</span>
           </div>
           <div class="slider-field" title="Adjust the background video's volume">
             <div class="slider-top">
-              <label for="sliderVideoVolume">Video Volume</label>
+              <label for="sliderVideoVolume">Volume</label>
               <span class="slider-val" id="valVideoVolume">35%</span>
             </div>
             <input type="range" id="sliderVideoVolume" min="0" max="100" value="35" />
           </div>
-          <div class="video-trim-row" title="Trim dead or frozen trailing seconds so the video loops immediately at the cutoff point (0 = Auto-detect)">
-            <label for="inputVideoLoopStartSec">Loop Start (s)
-              <input type="number" id="inputVideoLoopStartSec" min="0" max="3600" step="0.1" value="0" inputmode="decimal" />
-            </label>
-            <label for="inputVideoLoopEndSec">Loop End Cutoff (s, 0 = Auto)
-              <input type="number" id="inputVideoLoopEndSec" min="0" max="3600" step="0.1" value="0" placeholder="Auto" inputmode="decimal" />
-            </label>
-          </div>
-          <p class="video-audio-note" id="videoLoopTrimHelp">Auto-detect cuts trailing audio overhangs and frozen end frames automatically. Set Loop End Cutoff (e.g. 12s) to force an exact loop point.</p>
-          <p class="video-audio-note" id="videoAudioHelp">Pause/Play and Mute/Unmute are available beside the active video in the layout map. Videos start muted. Sound preferences are per exact origin in this release; the browser may require an on-page click to allow sound.</p>
+          <p class="video-audio-note" id="videoAudioHelp" hidden>Use Pause or Unmute beside the video on the left.</p>
+          <details class="advanced-details video-trim-details">
+            <summary>Trim video loop (optional)</summary>
+            <div class="advanced-body">
+              <div class="video-trim-row" title="Trim dead or frozen trailing seconds so the video loops immediately at the cutoff point (0 = Auto-detect)">
+                <label for="inputVideoLoopStartSec">Loop Start (s)
+                  <input type="number" id="inputVideoLoopStartSec" min="0" max="3600" step="0.1" value="0" inputmode="decimal" />
+                </label>
+                <label for="inputVideoLoopEndSec">Loop End (s, 0 = Auto)
+                  <input type="number" id="inputVideoLoopEndSec" min="0" max="3600" step="0.1" value="0" placeholder="Auto" inputmode="decimal" />
+                </label>
+              </div>
+              <p class="video-audio-note" id="videoLoopTrimHelp">Frozen end frames are trimmed automatically. Set Loop End only if you want a custom cut point.</p>
+            </div>
+          </details>
         </section>
 
         <!-- Primary Visual Controls -->
         <section class="inspector-group" aria-labelledby="visualControlsHeading">
-          <h3 id="visualControlsHeading">Visual Adjustments</h3>
+          <h3 id="visualControlsHeading">Look</h3>
 
-          <div class="slider-field" title="Adjust background layer transparency without reducing foreground text opacity">
+          <div class="quick-looks-block">
+            <div class="quick-looks-row" id="quickLooksRow" role="group" aria-label="One-click looks">
+              <button type="button" class="quick-look-btn" data-look="clear" title="Crisp wallpaper with light dimming">Clear</button>
+              <button type="button" class="quick-look-btn" data-look="easy-read" title="Soft frosted cards and balanced dimming — great for study sites">Easy Read</button>
+              <button type="button" class="quick-look-btn" data-look="frosted" title="Strong frosted glass panels over a softly blurred wallpaper">Frosted</button>
+              <button type="button" class="quick-look-btn" data-look="dark-cozy" title="Darker cozy tint for late-night browsing">Cozy</button>
+            </div>
+          </div>
+
+          <div class="slider-field" title="How visible the wallpaper is behind the website">
             <div class="slider-top">
-              <label for="sliderOpacity">Background Opacity</label>
+              <label for="sliderOpacity">Wallpaper Visibility</label>
               <span class="slider-val" id="valOpacity">85%</span>
             </div>
             <input type="range" id="sliderOpacity" min="5" max="100" value="85" />
           </div>
 
-          <div class="slider-field" title="Adjust background image or video brightness">
+          <div class="slider-field" title="Adds a gentle tint over the wallpaper so website text stays easy to read">
             <div class="slider-top">
-              <label for="sliderBrightness">Brightness</label>
-              <span class="slider-val" id="valBrightness">100%</span>
-            </div>
-            <input type="range" id="sliderBrightness" min="25" max="180" value="100" />
-          </div>
-
-          <div class="slider-field" title="Adjust visual contrast of the background layer">
-            <div class="slider-top">
-              <label for="sliderContrast">Contrast</label>
-              <span class="slider-val" id="valContrast">100%</span>
-            </div>
-            <input type="range" id="sliderContrast" min="25" max="180" value="100" />
-          </div>
-
-          <div class="slider-field" title="Adjust color saturation of the background media">
-            <div class="slider-top">
-              <label for="sliderSaturation">Saturation</label>
-              <span class="slider-val" id="valSaturation">100%</span>
-            </div>
-            <input type="range" id="sliderSaturation" min="0" max="200" value="100" />
-          </div>
-
-          <div class="slider-field" title="Apply Gaussian blur to soften busy background details">
-            <div class="slider-top">
-              <label for="sliderBlur">Gaussian Blur</label>
-              <span class="slider-val" id="valBlur">0 px</span>
-            </div>
-            <input type="range" id="sliderBlur" min="0" max="24" value="0" />
-          </div>
-
-          <div class="slider-field" title="Add a subtle dark or light tint overlay above the background to keep foreground text legible">
-            <div class="slider-top">
-              <label for="sliderDimmer">Readability Dimmer</label>
+              <label for="sliderDimmer">Darken for Reading</label>
               <span class="slider-val" id="valDimmer">20%</span>
             </div>
             <input type="range" id="sliderDimmer" min="0" max="85" value="20" />
           </div>
 
-          <div class="slider-field" title="Apply frosted glass backdrop blur to inner website cards and containers so page text floats cleanly over the background">
-            <div class="slider-top">
-              <label for="sliderBackdropBlur">Frosted Glass Cards</label>
-              <span class="slider-val" id="valBackdropBlur">0 px</span>
-            </div>
-            <input type="range" id="sliderBackdropBlur" min="0" max="24" value="0" />
-          </div>
-
           <div class="control-field">
-            <label for="selectTextContrastMode" title="Enhance foreground text legibility with a crisp contrast shadow when website text blends into busy backgrounds">
-              Smart Text Readability
-            </label>
-            <select id="selectTextContrastMode" class="select-field">
-              <option value="none">Default (Website original text)</option>
-              <option value="auto-shadow">Crisp Dark Halo (Best for light text)</option>
-              <option value="light-halo">Crisp Light Halo (Best for dark text)</option>
-              <option value="force-light">High-Contrast Light Text + Shadow</option>
-            </select>
-          </div>
-
-          <div class="control-field">
-            <span class="field-label">Fit Arrangement</span>
+            <span class="field-label">How it fits</span>
             <div class="segmented-group" role="radiogroup" aria-label="Background fit mode">
-              <button type="button" class="seg-btn active" data-fit="cover">Cover</button>
-              <button type="button" class="seg-btn" data-fit="contain">Contain</button>
+              <button type="button" class="seg-btn active" data-fit="cover">Fill</button>
+              <button type="button" class="seg-btn" data-fit="contain">Fit</button>
               <button type="button" class="seg-btn" data-fit="repeat">Tile</button>
             </div>
           </div>
+
+          <details class="advanced-details readability-details">
+            <summary>Glass, blur &amp; text readability</summary>
+            <div class="advanced-body">
+              <div class="slider-field" title="Adds a frosted glass blur to website panels and cards">
+                <div class="slider-top">
+                  <label for="sliderBackdropBlur">Frosted Glass Cards</label>
+                  <span class="slider-val" id="valBackdropBlur">0 px</span>
+                </div>
+                <input type="range" id="sliderBackdropBlur" min="0" max="24" value="0" />
+              </div>
+
+              <div class="slider-field" title="Softly blur busy wallpaper details">
+                <div class="slider-top">
+                  <label for="sliderBlur">Soft Blur</label>
+                  <span class="slider-val" id="valBlur">0 px</span>
+                </div>
+                <input type="range" id="sliderBlur" min="0" max="24" value="0" />
+              </div>
+
+              <div class="control-field">
+                <label for="selectTextContrastMode" title="Makes website text pop cleanly over busy wallpapers">
+                  Text Readability Boost
+                </label>
+                <select id="selectTextContrastMode" class="select-field">
+                  <option value="none">Off (Normal website text)</option>
+                  <option value="auto-shadow">Soft dark shadow (best for light text)</option>
+                  <option value="light-halo">Soft light glow (best for dark text)</option>
+                  <option value="force-light">Bright white text + shadow</option>
+                  <option value="dynamic-invert">Experimental: Dynamic Invert (reacts to wallpaper)</option>
+                </select>
+              </div>
+            </div>
+          </details>
+
+          <details class="advanced-details color-tune-details">
+            <summary>Color &amp; brightness</summary>
+            <div class="advanced-body">
+              <div class="slider-field" title="Adjust wallpaper brightness">
+                <div class="slider-top">
+                  <label for="sliderBrightness">Brightness</label>
+                  <span class="slider-val" id="valBrightness">100%</span>
+                </div>
+                <input type="range" id="sliderBrightness" min="25" max="180" value="100" />
+              </div>
+
+              <div class="slider-field" title="Adjust wallpaper contrast">
+                <div class="slider-top">
+                  <label for="sliderContrast">Contrast</label>
+                  <span class="slider-val" id="valContrast">100%</span>
+                </div>
+                <input type="range" id="sliderContrast" min="25" max="180" value="100" />
+              </div>
+
+              <div class="slider-field" title="Adjust wallpaper color richness">
+                <div class="slider-top">
+                  <label for="sliderSaturation">Color Richness</label>
+                  <span class="slider-val" id="valSaturation">100%</span>
+                </div>
+                <input type="range" id="sliderSaturation" min="0" max="200" value="100" />
+              </div>
+
+              <div class="control-field">
+                <label for="inputTintColor">Reading Tint Color</label>
+                <input type="color" id="inputTintColor" value="#0f172a" class="color-input" />
+              </div>
+            </div>
+          </details>
         </section>
 
         <!-- Expandable Advanced Options -->
         <details class="advanced-details">
-          <summary>Advanced Rendering &amp; Site Matching Options</summary>
+          <summary>More options (site matching &amp; compatibility)</summary>
           <div class="advanced-body">
             <div class="control-field">
-              <label for="selectSiteMatchScope" title="Choose whether this customization applies only to this exact origin (protocol + host + port) or across the hostname">
-                Site Matching Scope
+              <label for="selectSiteMatchScope" title="Choose whether this look applies only to this exact address or across subdomains">
+                Where this look applies
               </label>
               <select id="selectSiteMatchScope" class="select-field">
-                <option value="origin">Exact Origin (protocol + host + port)</option>
-                <option value="hostname">Entire Hostname (HTTP &amp; HTTPS, all ports)</option>
-                <option value="subdomain">Hostname &amp; Subdomains (*.domain)</option>
+                <option value="origin">This exact website address</option>
+                <option value="hostname">Whole website (HTTP &amp; HTTPS)</option>
+                <option value="subdomain">Website &amp; all subdomains</option>
               </select>
             </div>
 
             <div class="control-field">
-              <label for="inputTintColor">Dimmer Overlay Color</label>
-              <input type="color" id="inputTintColor" value="#0f172a" class="color-input" />
-            </div>
-
-            <div class="control-field">
-              <label for="selectRenderMode" title="Override how ChameleonBG attaches the background to this component">
-                Rendering Strategy
+              <label for="selectRenderMode" title="Change how the background attaches if a section looks clipped">
+                Compatibility Mode
               </label>
               <select id="selectRenderMode" class="select-field">
                 <option value="">Automatic (Recommended)</option>
-                <option value="mode-b">Mode B — Independent Child Layer</option>
-                <option value="mode-c">Mode C — Controlled Inline Style Fallback</option>
+                <option value="mode-b">Layered background (default for sections)</option>
+                <option value="mode-c">Simple inline background (images only)</option>
               </select>
             </div>
 
-            <label class="checkbox-field" title="When customizing the Entire Website, gently make full-screen opaque root containers semi-transparent so the backdrop is visible">
+            <label class="checkbox-field" title="Gently makes solid white page panels slightly see-through so your wallpaper shines through">
               <input type="checkbox" id="chkSoftenWrappers" checked />
-              <span>Soften opaque top-level page wrappers (Mode A)</span>
+              <span>Make solid page panels slightly see-through</span>
             </label>
           </div>
         </details>
@@ -474,6 +503,10 @@
           <option value="size-desc">Largest first</option>
           <option value="size-asc">Smallest first</option>
         </select>
+        <div class="media-view-toggle" role="group" aria-label="Media library view layout">
+          <button type="button" class="btn btn-sm view-toggle-btn active" data-media-view="grid" aria-pressed="true" title="Show large preview icons">Icons</button>
+          <button type="button" class="btn btn-sm view-toggle-btn" data-media-view="list" aria-pressed="false" title="Show compact file list">List</button>
+        </div>
         <label class="btn btn-primary upload-btn-label">
           Import media
           <input type="file" id="libraryFileInput" accept="image/webp,image/avif,image/png,image/jpeg,image/gif,image/svg+xml,video/webm,video/mp4,video/ogg" multiple hidden />
@@ -754,9 +787,9 @@
           <input type="text" id="themeInputName" class="input-text" placeholder="e.g. YouTube Dark Mode" required />
         </div>
         <div class="form-group">
-          <label for="themeInputDomain">Base / Registrable Domain</label>
-          <input type="text" id="themeInputDomain" class="input-text" placeholder="e.g. youtube.com" required />
-          <p class="form-help">Applies to all subdomains of this base domain (e.g. music.youtube.com, studio.youtube.com).</p>
+          <label for="themeInputDomain">Website Domain</label>
+          <input type="text" id="themeInputDomain" class="input-text" placeholder="e.g. khanacademy.org or youtube.com" required />
+          <p class="form-help">Works across this website and its subdomains (like music.youtube.com).</p>
         </div>
         <div class="form-group">
           <label class="checkbox-label">

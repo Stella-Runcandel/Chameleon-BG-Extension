@@ -443,9 +443,49 @@ async function listOpenSiteTabs() {
   return result;
 }
 
+// Bounded in-memory cache of website snapshots captured while the website tab was
+// already active (opening Studio, picking an area), so Preview renders immediately
+// without flashing back and forth between tabs.
+const cachedPreviewSnapshots = new Map();
+const MAX_CACHED_SNAPSHOTS = 6;
+
+async function captureTabSnapshotIfVisible(tabId, expectedSiteKey) {
+  if (!Number.isInteger(tabId) || !chrome.tabs?.captureVisibleTab) return null;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab || !tab.active || typeof tab.url !== "string" || !/^https?:\/\//i.test(tab.url)) return null;
+    const identity = ChameleonStorageService.deriveSiteIdentity(tab.url);
+    if (expectedSiteKey && identity.originKey !== expectedSiteKey) return null;
+    const dataUrl = await new Promise((resolve) => {
+      try {
+        chrome.tabs.captureVisibleTab(tab.windowId, { format: "jpeg", quality: 80 }, (url) => {
+          if (chrome.runtime.lastError || typeof url !== "string" || !url.startsWith("data:image/")) resolve(null);
+          else resolve(url);
+        });
+      } catch (_) {
+        resolve(null);
+      }
+    });
+    if (!dataUrl) return null;
+    if (cachedPreviewSnapshots.size >= MAX_CACHED_SNAPSHOTS) {
+      const oldestKey = cachedPreviewSnapshots.keys().next().value;
+      if (oldestKey !== undefined) cachedPreviewSnapshots.delete(oldestKey);
+    }
+    const entry = { dataUrl, siteKey: identity.originKey, capturedAt: Date.now() };
+    cachedPreviewSnapshots.set(tabId, entry);
+    return entry;
+  } catch (_) {
+    return null;
+  }
+}
+
 // Single-instance Studio: reuse an existing Studio tab and re-target it. When the picker is
 // requested the Studio opens/stays in the background so the website tab stays in front.
 async function openOrFocusStudio({ tabId, siteKey, section, startPicker }) {
+  const numericTabId = Number(tabId);
+  if (Number.isInteger(numericTabId) && numericTabId > 0) {
+    await captureTabSnapshotIfVisible(numericTabId, siteKey || "");
+  }
   const studioBase = chrome.runtime.getURL("studio.html");
   const allTabs = await chrome.tabs.query({}).catch(() => []);
   const existing = allTabs.find((t) => typeof t.url === "string" && t.url.split(/[?#]/, 1)[0] === studioBase);
@@ -1526,6 +1566,9 @@ async function handleRuntimeMessage(message, sender) {
       const runtimeState = await getSiteRuntimeState(parsedSenderUrl.href);
       if (!runtimeState.allowed) throw new Error("ChameleonBG site access is no longer enabled for this page.");
 
+      // Silently refresh the cached preview snapshot while the website tab is still active.
+      captureTabSnapshotIfVisible(sender.tab.id, identity.originKey).catch(() => {});
+
       // Use a distinct relay type to avoid relying on undocumented assumptions about
       // whether sibling extension pages receive the original content-script message.
       try {
@@ -1546,6 +1589,37 @@ async function handleRuntimeMessage(message, sender) {
       // Runtime messages are broadcast to extension contexts; if this relay reaches
       // the background listener too, acknowledge it without re-broadcasting.
       return { ignored: true };
+    }
+
+    case "CHAMELEON_GET_CACHED_PREVIEW_SNAPSHOT": {
+      if (!isTrustedStudioCommand(sender)) {
+        throw new Error("Cached preview snapshots are available only to ChameleonBG Studio.");
+      }
+      const tabId = Number(message.tabId);
+      const entry = Number.isInteger(tabId) ? cachedPreviewSnapshots.get(tabId) : null;
+      if (!entry || (message.siteKey && entry.siteKey !== message.siteKey)) {
+        return { found: false };
+      }
+      return { found: true, dataUrl: entry.dataUrl, capturedAt: entry.capturedAt };
+    }
+
+    case "CHAMELEON_SET_CACHED_PREVIEW_SNAPSHOT": {
+      if (!isTrustedStudioCommand(sender)) {
+        throw new Error("Cached preview snapshots can only be updated by ChameleonBG Studio.");
+      }
+      const tabId = Number(message.tabId);
+      if (Number.isInteger(tabId) && typeof message.dataUrl === "string" && message.dataUrl.startsWith("data:image/")) {
+        if (cachedPreviewSnapshots.size >= MAX_CACHED_SNAPSHOTS) {
+          const oldestKey = cachedPreviewSnapshots.keys().next().value;
+          if (oldestKey !== undefined) cachedPreviewSnapshots.delete(oldestKey);
+        }
+        cachedPreviewSnapshots.set(tabId, {
+          dataUrl: message.dataUrl,
+          siteKey: typeof message.siteKey === "string" ? message.siteKey : "",
+          capturedAt: Date.now()
+        });
+      }
+      return { stored: true };
     }
 
     case "CHAMELEON_CHECK_TAB_CAPABILITY": {

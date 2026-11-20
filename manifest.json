@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChameleonBG — Custom Website Backgrounds",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Firefox visual background studio with reliable audio playback, Domain Themes, safe data lifecycle, and streamlined site access.",
   "permissions": [
     "storage",

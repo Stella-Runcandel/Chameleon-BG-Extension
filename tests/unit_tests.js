@@ -1482,7 +1482,7 @@ async function runUnitTests() {
   await test("U36", "Firefox release has the production name, version, and add-on ID", async () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.json"), "utf8"));
     assert.strictEqual(manifest.name, "ChameleonBG — Custom Website Backgrounds");
-    assert.strictEqual(manifest.version, "2.4.0");
+    assert.strictEqual(manifest.version, "2.5.0");
     assert.strictEqual(manifest.browser_specific_settings.gecko.id, "chameleonbg@local.experimental");
     assert.strictEqual(manifest.action.default_title, "ChameleonBG Studio");
     assert(manifest.name.length <= 45);
