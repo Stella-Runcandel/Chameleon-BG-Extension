@@ -2,6 +2,8 @@
 
 **Add custom images, animated GIFs, sanitized SVGs, or looping video wallpapers to any website or specific sections of a page.**
 
+[**Install for Firefox →**](https://addons.mozilla.org/en-US/firefox/addon/chameleonbg-custom-backgrounds/)
+
 [![Firefox Add-ons](https://img.shields.io/badge/Firefox%20Add--ons-v2.5.0-FF7139?logo=firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/chameleonbg-custom-backgrounds/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Privacy: Local Only](https://img.shields.io/badge/Privacy-100%25%20Local%20Only-16a34a.svg)](PRIVACY.md)
@@ -80,3 +82,5 @@ ChameleonBG uses plain, readable JavaScript, HTML, and CSS with zero build step 
 - **Contributing:** Bug reports, UX ideas, and pull requests are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Bug Reports & Support:** Open an issue on [GitHub Issues](https://github.com/Stella-Runcandel/Chameleon-BG-Extension/issues).
 - **License:** [MIT License](LICENSE). Optional development support links are in Settings ([Ko-fi](https://ko-fi.com/stellalabs) · [Patreon](https://www.patreon.com/cw/Stella_Labs)); all features are free for everyone.
+
+Built by **Stella Labs**. Follow updates and devlogs on [X](https://x.com/StellaRuncandel) and [YouTube](https://www.youtube.com/channel/UCrN6ocwodS_Mjl9n23L-t0g).
