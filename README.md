@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Privacy: Local Only](https://img.shields.io/badge/Privacy-100%25%20Local%20Only-16a34a.svg)](PRIVACY.md)
 
-ChameleonBG is a privacy-first browser extension with a full Visual Studio for personalizing websites. Everything stays locally in your browser with no accounts, no analytics, and no uploads.
+ChameleonBG is a privacy-first browser extension with a visual editor for personalizing websites. Everything stays locally in your browser with no accounts, no analytics, and no uploads.
 
 ![Before and after: custom wallpaper with Frosted Glass Cards](docs/amo-screenshots-2.5.0/01-hero-before-after.png)
 
@@ -83,4 +83,4 @@ ChameleonBG uses plain, readable JavaScript, HTML, and CSS with zero build step 
 - **Bug Reports & Support:** Open an issue on [GitHub Issues](https://github.com/Stella-Runcandel/Chameleon-BG-Extension/issues).
 - **License:** [MIT License](LICENSE). Optional development support links are in Settings ([Ko-fi](https://ko-fi.com/stellalabs) · [Patreon](https://www.patreon.com/cw/Stella_Labs)); all features are free for everyone.
 
-Built by **Stella Labs**. Follow updates and devlogs on [X](https://x.com/StellaRuncandel) and [YouTube](https://www.youtube.com/channel/UCrN6ocwodS_Mjl9n23L-t0g).
+Built by **[Stella Labs](https://www.patreon.com/cw/Stella_Labs)**. Follow updates and devlogs on [X](https://x.com/StellaRuncandel) and [YouTube](https://www.youtube.com/@ProjectBecomingYT).
